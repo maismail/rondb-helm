@@ -1,0 +1,67 @@
+clusterSize:
+  activeDataReplicas: 1
+  numNodeGroups: 1
+  minNumMySQLServers: 1
+  maxNumMySQLServers: 1
+  numRdrs: 0
+  maxNumRdrs: 0
+
+resources:
+  limits:
+    cpus:
+      mgmds: 0.2
+      ndbmtds: 2
+      mysqlds: 2
+      rdrs: 2
+      benchs: 2
+    memory:
+      mgmds: 50M
+      ndbmtds: 2500M
+      mysqlds: 1400M
+      rdrs: 500M
+      benchs: 100M
+  requests:
+    cpus:
+      mgmds: 0.2
+      ndbmtds: 1
+      mysqlds: 1
+      rdrs: 1
+      benchs: 1
+    memory:
+      mgmds: 20M
+      ndbmtds: 1500M
+      mysqlds: 650M
+      rdrs: 100M
+      benchs: 100M
+
+rondbConfig:
+  NumCPUs: 2
+  TotalMemoryConfig: 2300M
+  MaxNoOfTables: 128
+  MaxNoOfAttributes: 4000
+  MaxNoOfTriggers: 1000
+  TransactionMemory: 150M
+  SharedGlobalMemory: 150M
+  ReservedConcurrentOperations: 20000
+  FragmentLogFileSize: 32M
+  MaxNoOfConcurrentOperations: 100000
+
+  EmptyApiSlots: 0
+  MySQLdSlotsPerNode: 4
+  RdrsSlotsPerNode: 2
+
+benchmarking:
+  dbt2:
+    numWarehouses: 2
+    runSingle: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      1                    1               1
+      1                    2               1
+      1                    2               2
+    runMulti: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      2                    1               1
+      2                    1               2
+  sysbench:
+    threadCountsToRun: "1;2;4;8;12;16"
+    rows: 100000

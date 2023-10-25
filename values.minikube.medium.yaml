@@ -1,0 +1,80 @@
+clusterSize:
+  activeDataReplicas: 2
+  numNodeGroups: 1
+  minNumMySQLServers: 2
+  maxNumMySQLServers: 1
+  numRdrs: 1
+  maxNumRdrs: 1
+
+resources:
+  limits:
+    cpus:
+      mgmds: 0.2
+      ndbmtds: 4
+      mysqlds: 4
+      rdrs: 2
+      benchs: 2
+    memory:
+      mgmds: 50M
+      ndbmtds: 8000M
+      mysqlds: 1400M
+      rdrs: 600M
+      benchs: 600M
+  requests:
+    cpus:
+      mgmds: 0.2
+      ndbmtds: 4
+      mysqlds: 4
+      rdrs: 2
+      benchs: 1
+    memory:
+      mgmds: 20M
+      ndbmtds: 5000M
+      mysqlds: 650M
+      rdrs: 100M
+      benchs: 100M
+
+rondbConfig:
+  NumCPUs: 4
+  TotalMemoryConfig: 6500M
+  MaxNoOfTables: 384
+  MaxNoOfAttributes: 8000
+  MaxNoOfTriggers: 4000
+  TransactionMemory: 300M
+  SharedGlobalMemory: 300M
+  ReservedConcurrentOperations: 50000
+  FragmentLogFileSize: 128M
+  MaxNoOfConcurrentOperations: 200000
+
+  EmptyApiSlots: 0
+  MySQLdSlotsPerNode: 4
+  RdrsSlotsPerNode: 2
+
+benchmarking:
+  dbt2:
+    numWarehouses: 32
+    runSingle: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      1                    1               1
+      1                    2               1
+      1                    4               1
+      1                    6               1
+      1                    8               1
+      1                    12              1
+      1                    16              1
+      1                    24              1
+      1                    32              1
+      1                    32              2
+    runMulti: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      2                    1               1
+      2                    2               1
+      2                    4               1
+      2                    6               1
+      2                    8               1
+      2                    12              1
+      2                    16              1
+      2                    16              2
+  sysbench:
+    threadCountsToRun: "1;2;4;8;12;16;24;32;48;64"
+    rows: 100000

@@ -1,0 +1,302 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "properties": {
+        "image": {
+            "type": "object",
+            "description": "RonDB container image",
+            "properties": {
+                "registry": {
+                    "type": "string",
+                    "description": "Where image is hosted; includes repo if available. Omit for local registry (E.g. use `minikube image load rondb-standalone:22.10.1`)"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Tag of RonDB image"
+                }
+            },
+            "required": [
+                "tag"
+            ]
+        },
+        "mysql": {
+            "type": "object",
+            "description": "How to initialize MySQL",
+            "properties": {
+                "rootPassword": {
+                    "type": "string"
+                },
+                "sqlInitContent": {
+                    "type": "string",
+                    "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent though, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
+                }
+            }
+        },
+        "clusterSize": {
+            "type": "object",
+            "description": "Horizontal cluster size",
+            "properties": {
+                "activeDataReplicas": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3
+                },
+                "numNodeGroups": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "minNumMySQLServers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "A minimum amount of MySQL servers"
+                },
+                "maxNumMySQLServers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "The maximum amount of MySQL servers we will auto-scale to. It is represented as number of slots in RonDB's config.ini. Changing this will only take effect if the ConfigMap for config.ini is updated and the MGMd is restarted."
+                },
+                "numRdrs": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "maxNumRdrs": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "activeDataReplicas",
+                "numNodeGroups",
+                "minNumMySQLServers",
+                "maxNumMySQLServers",
+                "numRdrs",
+                "maxNumRdrs"
+            ]
+        },
+        "resources": {
+            "type": "object",
+            "description": "Vertical cluster size",
+            "properties": {
+                "limits": {
+                    "type": "object",
+                    "description": "Kubernetes resource limits",
+                    "properties": {
+                        "cpus": {
+                            "$ref": "#/$defs/cpuResources"
+                        },
+                        "memory": {
+                            "$ref": "#/$defs/memoryResources"
+                        }
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "description": "Kubernetes resource requests",
+                    "properties": {
+                        "cpus": {
+                            "$ref": "#/$defs/cpuResources"
+                        },
+                        "memory": {
+                            "$ref": "#/$defs/memoryResources"
+                        },
+                        "storage": {
+                            "type": "object",
+                            "description": "Volume sizes",
+                            "properties": {
+                                "mgmdData": {
+                                    "type": "string"
+                                },
+                                "mgmdLogs": {
+                                    "type": "string"
+                                },
+                                "ndbmtdData": {
+                                    "type": "string"
+                                },
+                                "ndbmtdLogs": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "rondbConfig": {
+            "type": "object",
+            "description": "Configurations for RonDB's config.ini",
+            "properties": {
+                "NumCPUs": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "TotalMemoryConfig": {
+                    "type": "string",
+                    "description": "The containers will otherwise assume that they can occupy the entire node's memory (at least in minikube + Docker driver)"
+                },
+                "MaxNoOfTables": {
+                    "type": "integer"
+                },
+                "MaxNoOfAttributes": {
+                    "type": "integer"
+                },
+                "MaxNoOfTriggers": {
+                    "type": "integer"
+                },
+                "TransactionMemory": {
+                    "type": "string"
+                },
+                "SharedGlobalMemory": {
+                    "type": "string"
+                },
+                "ReservedConcurrentOperations": {
+                    "type": "integer"
+                },
+                "FragmentLogFileSize": {
+                    "type": "string"
+                },
+                "MaxNoOfConcurrentOperations": {
+                    "type": "integer"
+                },
+                "MySQLdSlotsPerNode": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4
+                },
+                "RdrsSlotsPerNode": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                },
+                "EmptyApiSlots": {
+                    "type": "integer",
+                    "description": "For services that are not handled here, e.g. HopsFS"
+                }
+            },
+            "required": [
+                "NumCPUs",
+                "TotalMemoryConfig",
+                "MaxNoOfTables",
+                "MaxNoOfAttributes",
+                "MaxNoOfTriggers",
+                "TransactionMemory",
+                "SharedGlobalMemory",
+                "ReservedConcurrentOperations",
+                "FragmentLogFileSize",
+                "MaxNoOfConcurrentOperations",
+                "MySQLdSlotsPerNode",
+                "RdrsSlotsPerNode"
+            ]
+        },
+        "benchmarking": {
+            "type": "object",
+            "description": "Whether, which and how to run a benchmarking job on the cluster",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "mysqlUsername": {
+                    "type": "string"
+                },
+                "mysqlPassword": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Which benchmarking job to run. 'Multi' refers to multiple MySQLd servers to run against",
+                    "enum": [
+                        "sysbench",
+                        "dbt2_single",
+                        "dbt2_multi"
+                    ]
+                },
+                "dbt2": {
+                    "type": "object",
+                    "description": "Configuration of DBT2 benchmarking job",
+                    "properties": {
+                        "numWarehouses": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "runSingle": {
+                            "type": "string",
+                            "description": "Table with columns: NUM_MYSQL_SERVERS | NUM_WAREHOUSES | NUM_TERMINALS"
+                        },
+                        "runMulti": {
+                            "type": "string",
+                            "description": "Table with columns: NUM_MYSQL_SERVERS | NUM_WAREHOUSES | NUM_TERMINALS"
+                        }
+                    }
+                },
+                "sysbench": {
+                    "type": "object",
+                    "description": "Configuration of Sysbench benchmarking job",
+                    "properties": {
+                        "threadCountsToRun": {
+                            "type": "string",
+                            "description": "Semi-colon-separated list of thread counts to run"
+                        },
+                        "rows": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "required": [
+                "enabled",
+                "mysqlUsername",
+                "mysqlPassword",
+                "type"
+            ]
+        }
+    },
+    "required": [
+        "image",
+        "clusterSize",
+        "resources",
+        "rondbConfig"
+    ],
+    "$defs": {
+        "cpuResources": {
+            "type": "object",
+            "description": "CPU resources per RonDB service type",
+            "properties": {
+                "mgmds": {
+                    "type": "number"
+                },
+                "ndbmtds": {
+                    "type": "number"
+                },
+                "mysqlds": {
+                    "type": "number"
+                },
+                "rdrs": {
+                    "type": "number"
+                },
+                "benchs": {
+                    "type": "number"
+                }
+            }
+        },
+        "memoryResources": {
+            "type": "object",
+            "description": "Memory resources per RonDB service type",
+            "properties": {
+                "mgmds": {
+                    "type": "string"
+                },
+                "ndbmtds": {
+                    "type": "string"
+                },
+                "mysqlds": {
+                    "type": "string"
+                },
+                "rdrs": {
+                    "type": "string"
+                },
+                "benchs": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "title": "Values",
+    "type": "object"
+}
