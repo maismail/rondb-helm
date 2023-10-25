@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   serviceName: rdrs
-  replicas: {{ .Values.clusterSize.numRdrs }}
+  replicas: {{ .Values.clusterSize.minNumRdrs }}
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
@@ -90,3 +90,23 @@ spec:
       protocol: TCP
       port: 5406
       targetPort: 5406
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rdrs
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: rdrs
+  minReplicas: {{ .Values.clusterSize.minNumRdrs }}
+  maxReplicas: {{ .Values.clusterSize.maxNumRdrs }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

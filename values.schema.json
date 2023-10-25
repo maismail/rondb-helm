@@ -54,7 +54,7 @@
                     "minimum": 1,
                     "description": "The maximum amount of MySQL servers we will auto-scale to. It is represented as number of slots in RonDB's config.ini. Changing this will only take effect if the ConfigMap for config.ini is updated and the MGMd is restarted."
                 },
-                "numRdrs": {
+                "minNumRdrs": {
                     "type": "integer",
                     "minimum": 0
                 },
@@ -68,7 +68,7 @@
                 "numNodeGroups",
                 "minNumMySQLServers",
                 "maxNumMySQLServers",
-                "numRdrs",
+                "minNumRdrs",
                 "maxNumRdrs"
             ]
         },

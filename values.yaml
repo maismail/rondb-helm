@@ -15,7 +15,7 @@ clusterSize:
   numNodeGroups: 1
   minNumMySQLServers: 1
   maxNumMySQLServers: 5
-  numRdrs: 1
+  minNumRdrs: 1
   maxNumRdrs: 2
 
 resources:
