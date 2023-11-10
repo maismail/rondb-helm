@@ -35,10 +35,6 @@ spec:
         env:
           - name: HOST_GROUP_ID
             value: "0"
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: rondb-configs

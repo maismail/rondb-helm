@@ -1,8 +1,9 @@
 isLocalCluster: false
 
+# TODO: Consider using Chart.appVersion for tag instead
 image:
   registry: docker.io/hopsworks
-  tag: 22.10.1
+  tag: 22.10.1-0.4
 
 mysql:
   rootPassword: "Abc123?eeee"

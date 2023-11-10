@@ -11,7 +11,7 @@
             "properties": {
                 "registry": {
                     "type": "string",
-                    "description": "Where image is hosted; includes repo if available. Omit for local registry (E.g. use `minikube image load rondb-standalone:22.10.1`)"
+                    "description": "Where image is hosted; includes repo if available. Omit for local registry (E.g. use `minikube image load rondb-standalone:latest`)"
                 },
                 "tag": {
                     "type": "string",

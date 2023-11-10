@@ -101,6 +101,8 @@ metadata:
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None
+  # So we do not rely on the readiness probe to connect to the MGMd
+  publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
     rondbService: rdrs
@@ -114,6 +116,11 @@ spec:
       port: 5406
       targetPort: 5406
 ---
+{{ if
+    and (gt (.Values.clusterSize.minNumRdrs | int) 0)
+    (not (eq .Values.clusterSize.minNumRdrs .Values.clusterSize.maxNumRdrs))
+}}
+# Cannot autosscale from 0 since no metrics to measure
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -133,3 +140,4 @@ spec:
       target:
         type: Utilization
         averageUtilization: 70
+{{ end }}

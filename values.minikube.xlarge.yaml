@@ -4,7 +4,7 @@ clusterSize:
   activeDataReplicas: 2
   numNodeGroups: 1
   minNumMySQLServers: 2
-  maxNumMySQLServers: 1
+  maxNumMySQLServers: 2
   minNumRdrs: 1
   maxNumRdrs: 1
 

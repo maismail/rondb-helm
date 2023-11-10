@@ -1,23 +1,34 @@
 # Helmchart RonDB
 
+## Capabilities
+
+- Create custom-size, cross-AZ cluster
+- Horizontal auto-scaling of MySQLds & RDRS'
+
+## Capabilities with Manual Intervention
+
+- Scale data node replicas:
+  1. Use the MGM client to activate Node Ids
+  2. Increase `activeDataReplicas` in values.yaml. This will 
+     1. Change the config.ini (important in case MGMds restart later in time)
+     2. Increase the StatefulSet replicas.
+
+- Increase data node memory:
+  1. Make sure we have >=2 active data node replicas
+  2. Increase TotalMemoryConfig in values.yaml
+  3. Recreate MGMds
+  4. Increase memory limits of ndbmtds in values.yaml. The ndbdmtds will then perform a rolling update.
+
 ## TODO
 
 - Create more values.yaml files for production settings
 - Move MySQL passwords in secrets
-- Add affinities to availability zones
 - Add YCSB to benchmark options
+- Figure out how to run `SELECT count(*) FROM ndbinfo.nodes` as MySQL readiness check.
+  - Using  `--defaults-file=$RONDB_DATA_DIR/my.cnf` and `GRANT SELECT ON ndbinfo.nodes TO 'hopsworks'@'%';` does not work
+  - Error: `ERROR 1356 (HY000): View 'ndbinfo.nodes' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them`
 
-Add scaling:
-- In entrypoint, always activate the Node Id using the MGM client
-- When stopping, always deactivate the Node Id again
-  - Can then easily increase / decrease replication factor
-
-Rolling upgrades:
-- Rolling restarts with config.ini
-  - --> Make sure this has already taken into account the MGM client changes
-- Figure out how to upgrade services in order
-
-Jobs to add:
+Kubernetes Jobs to add:
 - Increasing logfile group sizes
 - Backups
 
@@ -64,36 +75,12 @@ The minikube.values.yaml files are for single-machine configurations. Use other 
 
 ## Benchmarking
 
-minikube start --driver=docker --cpus 10 --memory 20000
+Using Minikube on Mac M1 Pro: `minikube start --driver=docker --cpus 10 --memory 20000`
 
-1 MySQLd, 1 data node, 1 bench (1 CPU), max 430%, sysbench
+1 MySQLd, 1 data node, 1 bench, max 430%, sysbench, CPU requests < limits
 
-Final results for this test run
-Threads: 1 Mean: 141
-Threads: 2 Mean: 310
-Threads: 4 Mean: 631
-Threads: 8 Mean: 703
-Threads: 12 Mean: 745
-Threads: 16 Mean: 797
-Threads: 24 Mean: 844
-Threads: 32 Mean: 937
-
-1 MySQLd, 1 data node, 1 bench (no CPU specified), max 430%, sysbench
-
-Final results for this test run
-Threads: 1 Mean: 137
-Threads: 2 Mean: 320
-Threads: 4 Mean: 608
-Threads: 8 Mean: 677
-Threads: 12 Mean: 734
-Threads: 16 Mean: 747
-Threads: 24 Mean: 816
-Threads: 32 Mean: 861
-
-1 MySQLd, 1 data node, 1 bench, max 430%, sysbench, USING explicit CPU requests
-
---> CPU maxes out at 8 threads...
-Final results for this test run
+```bash
+--> CPU reaches max at 8 threads...
 Threads: 1 Mean: 140
 Threads: 2 Mean: 321
 Threads: 4 Mean: 618
@@ -102,9 +89,11 @@ Threads: 12 Mean: 762
 Threads: 16 Mean: 824
 Threads: 24 Mean: 886
 Threads: 32 Mean: 914
+```
 
 2 MySQLds, 1 data node, 1 bench, max 730%, sysbench, CPU requests < limits
 
+```bash
 Threads: 2 Mean: 600
 Threads: 4 Mean: 996
 Threads: 8 Mean: 1499
@@ -113,26 +102,46 @@ Threads: 16 Mean: 1649
 Threads: 24 Mean: 1860
 Threads: 32 Mean: 1844
 Threads: 64 Mean: 1926
+```
 
-2 MySQLds, 1 data node, 1 bench, max 800%, sysbench, resource limits==requests
+3 MySQLds, 1 data node, 1 bench, max 930%, sysbench, CPU requests < limits
 
-Threads: 1 Mean: 306
-Threads: 2 Mean: 601
-Threads: 4 Mean: 1007
-Threads: 8 Mean: 1439
-Threads: 12 Mean: 1632
-Threads: 16 Mean: 1745
-Threads: 24 Mean: 1897
-Threads: 32 Mean: 1967
-Threads: 64 Mean: 1972 <-- extra..
+```bash
+Threads: 1 Mean: 465
+Threads: 2 Mean: 862
+Threads: 4 Mean: 1200
+Threads: 8 Mean: 1717
+Threads: 12 Mean: 1916
+Threads: 16 Mean: 2035
+Threads: 24 Mean: 2240
+Threads: 32 Mean: 2332
+Threads: 64 Mean: 2250
+```
 
-2 MySQLds, 1 data node, 1 bench, max 850%, sysbench, OMITTING resource requests
+4 MySQLds, 1 data node, 1 bench, max 960%, sysbench, CPU requests < limits
 
-Threads: 1 Mean: 320
-Threads: 2 Mean: 614
-Threads: 4 Mean: 1023
-Threads: 8 Mean: 1492
-Threads: 12 Mean: 1659
-Threads: 16 Mean: 1767
-Threads: 24 Mean: 1985
-Threads: 32 Mean: 2065
+```bash
+Threads: 1 Mean: 603
+Threads: 2 Mean: 997
+Threads: 4 Mean: 1419
+Threads: 8 Mean: 1774
+Threads: 12 Mean: 1988
+Threads: 16 Mean: 2170
+Threads: 24 Mean: 2228
+Threads: 32 Mean: 2240
+Threads: 64 Mean: 2347
+```
+
+5 MySQLds, 1 data node, 1 bench, max 955%, sysbench, CPU requests < limits
+
+```bash
+Threads: 1 Mean: 649
+Threads: 2 Mean: 1025
+Threads: 4 Mean: 1504
+Threads: 8 Mean: 1812
+Threads: 12 Mean: 1941
+Threads: 16 Mean: 1895
+Threads: 24 Mean: 2091
+Threads: 32 Mean: 1834
+Threads: 64 Mean: 1278
+```

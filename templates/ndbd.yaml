@@ -8,6 +8,11 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 spec:
   serviceName: ndbmtd-ng-{{ $nodeGroup }}
+  # When using a startup probe, one ndbmtd is only started after
+  # the other is fully connected. However, when starting up a
+  # cluster (using flag --initial), the MGMd will wait for all
+  # data nodes to start at the same time.
+  podManagementPolicy: Parallel
   replicas: {{ $.Values.clusterSize.activeDataReplicas }}
 {{ if lt ($.Values.clusterSize.activeDataReplicas | int) 2 }}
   # Don't kill a data node if we only have 1 replica.
@@ -80,7 +85,6 @@ spec:
         args:
           - --agument-that-will-be-omitted
           - ndbmtd
-          - --initial
           - --ndb-connectstring=mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186
         ports:
           - containerPort: 11860
@@ -100,6 +104,23 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: FILE_SYSTEM_PATH
+            value: /srv/hops/mysql-cluster/ndb_data
+        startupProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - |
+                # Equivalent to replication factor of pod
+                POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
+                NODE_ID_OFFSET=$(($NODE_GROUP*3))
+                NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
+                ./docker/rondb_standalone/healthcheck.sh mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186 $NODE_ID
+          initialDelaySeconds: 15
+          failureThreshold: 100
+          periodSeconds: 15
+          timeoutSeconds: 15
         livenessProbe:
           exec:
             command:
@@ -111,10 +132,10 @@ spec:
                 NODE_ID_OFFSET=$(($NODE_GROUP*3))
                 NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
                 ./docker/rondb_standalone/healthcheck.sh mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186 $NODE_ID
-          failureThreshold: 3
-          initialDelaySeconds: 20
+          initialDelaySeconds: 10
+          failureThreshold: 5
           periodSeconds: 15
-          timeoutSeconds: 15
+          timeoutSeconds: 20
         volumeMounts:
         - name: rondb-ndbmtd-data
           mountPath: /srv/hops/mysql-cluster/ndb_data
@@ -140,6 +161,8 @@ metadata:
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None
+  # So we do not rely on the readiness probe to connect to the MGMd
+  publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
     rondbService: ndbmtd

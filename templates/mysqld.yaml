@@ -100,14 +100,27 @@ spec:
                 fieldPath: metadata.name
           - name: MYSQL_DATABASES_INIT_FILE
             value: /etc/pod-info/database-is-initialised.txt
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              mysql --defaults-file=$RONDB_DATA_DIR/my.cnf \
+                -e "SELECT 1"
+          initialDelaySeconds: 10
+          failureThreshold: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
         livenessProbe:
           exec:
             command:
               - 'mysqladmin'
               - 'ping'
               - '-uroot'
-          failureThreshold: 6
           initialDelaySeconds: 25
+          failureThreshold: 6
           periodSeconds: 10
           timeoutSeconds: 2
         securityContext:
@@ -151,6 +164,8 @@ metadata:
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None
+  # So we do not rely on the readiness probe to connect to the MGMd
+  publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
     rondbService: mysqld
@@ -195,6 +210,7 @@ data:
 {{ .Values.mysql.sqlInitContent | indent 8 }}
 ---
 {{ end }}
+{{ if not (eq .Values.clusterSize.minNumMySQLServers .Values.clusterSize.maxNumMySQLServers) }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -214,3 +230,4 @@ spec:
       target:
         type: Utilization
         averageUtilization: 70
+{{ end }}
