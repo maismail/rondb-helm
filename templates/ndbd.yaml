@@ -34,6 +34,30 @@ spec:
         rondbService: ndbmtd
         nodeGroup: {{ $nodeGroup | quote }}
     spec:
+      affinity:
+        podAntiAffinity:
+{{ if not $.Values.isLocalCluster }}
+          # Must be on different nodes
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: nodeGroup
+                  operator: In
+                  values:
+                  - {{ $nodeGroup | quote }}
+            topologyKey: kubernetes.io/hostname
+{{ end }}
+          # Can be in different zones
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: nodeGroup
+                  operator: In
+                  values:
+                  - {{ $nodeGroup | quote }}
+              topologyKey: topology.kubernetes.io/zone
       initContainers:
       - name: mgmd-dependency-check
         image: {{ include "image_registry" $standardContext }}rondb-standalone:{{ $.Values.image.tag }}

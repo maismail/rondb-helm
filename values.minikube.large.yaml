@@ -1,3 +1,5 @@
+isLocalCluster: true
+
 clusterSize:
   activeDataReplicas: 2
   numNodeGroups: 1

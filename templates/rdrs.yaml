@@ -16,6 +16,29 @@ spec:
       labels:
         rondbService: rdrs
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Preferred on different node
+          - weight: 90
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: rondbService
+                  operator: In
+                  values:
+                  - rdrs
+              topologyKey: kubernetes.io/hostname
+          # Preferred in different zone
+          - weight: 60
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: rondbService
+                  operator: In
+                  values:
+                  - rdrs
+              topologyKey: topology.kubernetes.io/zone
       initContainers:
       - name: datanode-dependency-check
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}

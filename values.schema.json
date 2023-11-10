@@ -1,6 +1,10 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema#",
     "properties": {
+        "isLocalCluster": {
+            "type": "boolean",
+            "description": "Whether we are for example running on Minikube"
+        },
         "image": {
             "type": "object",
             "description": "RonDB container image",

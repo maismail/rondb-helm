@@ -1,3 +1,5 @@
+isLocalCluster: false
+
 image:
   registry: docker.io/hopsworks
   tag: 22.10.1
