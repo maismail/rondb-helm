@@ -19,10 +19,10 @@ spec:
       containers:
       - name: mgmd
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
-        args:
-          - ndb_mgmd
-          - --ndb-nodeid=65
-          - --initial
+        command:
+          - /bin/bash
+          - -c
+          - ./docker/rondb_standalone/entrypoints/main.sh ndb_mgmd --ndb-nodeid=65 --initial
         ports:
           - containerPort: 1186
         resources:

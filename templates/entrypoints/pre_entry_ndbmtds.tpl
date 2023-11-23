@@ -27,5 +27,5 @@ else
 fi
 
 # Original entrypoint
-source ./docker/rondb_standalone/entrypoints/entrypoint.sh "$@" --ndb-nodeid=$NODE_ID $INITIAL_START
+source ./docker/rondb_standalone/entrypoints/main.sh "$@" --ndb-nodeid=$NODE_ID $INITIAL_START
 {{ end }}
