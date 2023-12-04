@@ -72,7 +72,7 @@ rondbConfig:
 
 benchmarking:
   enabled: false
-  mysqlUsername: "hopsworks"
+  mysqlUsername: "bench"
   mysqlPassword: "Abc123?e"
   type: "sysbench"
   dbt2:
