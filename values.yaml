@@ -2,7 +2,7 @@ isLocalCluster: false
 
 # TODO: Consider using Chart.appVersion for tag instead
 image:
-  registry: docker.io/hopsworks
+  registry: docker.io
   tag: 22.10.1-0.4
 
 mysql:
