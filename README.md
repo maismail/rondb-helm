@@ -36,8 +36,9 @@ Kubernetes Jobs to add:
 
 ```bash
 helm lint
-helm install --dry-run --debug --generate-name .
+helm template .
 
+# Install and/or upgrade:
 helm upgrade -i my-rondb .
 
 # To merge default values with custom ones:

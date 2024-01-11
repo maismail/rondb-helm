@@ -16,9 +16,7 @@ spec:
       labels:
         rondbService: mgmd
     spec:
-      {{- if or .Values.global.imagePullSecrets .Values.imagePullSecrets}}
       {{- include "rondb.imagePullSecrets" . | indent 6 }}
-      {{- end }}
       containers:
       - name: mgmd
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}

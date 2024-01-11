@@ -1,9 +1,7 @@
 # Also supports nothing defined at all (local registry)
 {{- define "image_registry" -}}
-{{- if $.Values.global -}}
-{{- if $.Values.global.imageRegistry -}}
+{{- if and $.Values.global $.Values.global.imageRegistry -}}
 {{- $.Values.global.imageRegistry -}}/hopsworks/
-{{- end -}}
 {{- else if $.Values.image.registry -}}
 {{- $.Values.image.registry -}}/hopsworks/
 {{- end -}}
@@ -13,7 +11,7 @@
 Resolve imagePullSecrets value
 */}}
 {{- define "rondb.imagePullSecrets" -}}
-{{- if .Values.global.imagePullSecrets }}
+{{- if and .Values.global .Values.global.imagePullSecrets }}
 imagePullSecrets:
 {{- range .Values.global.imagePullSecrets }}
   - name: {{ . }}
@@ -26,12 +24,11 @@ imagePullSecrets:
 {{- end -}}
 {{- end -}}
 
-
 {{/*
 Create the main Hopsworks user
 */}}
 {{- define "rondb.sqlInitContent" -}}
-{{- if and .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
+{{- if and .Values.global .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
 {{ .Values.mysql.sqlInitContent }}
 
 CREATE USER IF NOT EXISTS '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global.mysql.password }}';
