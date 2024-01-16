@@ -32,6 +32,28 @@ spec:
     matchLabels:
       rondbService: ndbmtd
       nodeGroup: {{ $nodeGroup | quote }}
+  # StatefulSets work with PVCs to create a dedicated persistent volume for
+  # each pod replica, ensuring that a pod always re-attaches to the same data
+  # even if it is rescheduled to a different node.
+  volumeClaimTemplates:
+    - metadata:
+        name: rondb-ndbmtd-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.requests.storage.ndbmtdData }}
+    - metadata:
+        name: rondb-ndbmtd-log
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.requests.storage.ndbmtdLogs }}
+  # Still in beta mode (Jan 2024)
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
   template:
     metadata:
       # Used to apply labels to all pods created by the StatefulSet
@@ -142,16 +164,6 @@ spec:
           mountPath: /srv/hops/mysql-cluster/ndb_data
         - name: rondb-ndbmtd-log
           mountPath: /srv/hops/mysql-cluster/log
-      # StatefulSets work with PVCs to create a dedicated persistent volume for
-      # each pod replica, ensuring that a pod always re-attaches to the same data
-      # even if it is rescheduled to a different node.
-      volumes:
-      - name: rondb-ndbmtd-data
-        persistentVolumeClaim:
-          claimName: rondb-ndbmtd-data-claim
-      - name: rondb-ndbmtd-log
-        persistentVolumeClaim:
-          claimName: rondb-ndbmtd-log-claim
 ---
 apiVersion: v1
 kind: Service
@@ -174,26 +186,3 @@ spec:
       targetPort: 11860
 ---
 {{ end }}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: rondb-ndbmtd-data-claim
-  namespace: {{ $.Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ $.Values.resources.requests.storage.ndbmtdData }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: rondb-ndbmtd-log-claim
-  namespace: {{ $.Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ $.Values.resources.requests.storage.ndbmtdLogs }}

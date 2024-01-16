@@ -10,6 +10,18 @@ spec:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
       rondbService: mysqld
+  volumeClaimTemplates:
+    - metadata:
+        name: dbs-have-initialized
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Ki
+  # Still in beta mode (Jan 2024)
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
   template:
     metadata:
       # Used to apply labels to all pods created by the Deployment
@@ -152,9 +164,6 @@ spec:
         configMap:
           name: sql-init-script
 {{ end }}
-      - name: dbs-have-initialized
-        persistentVolumeClaim:
-          claimName: dbs-have-initialized-claim
 ---
 apiVersion: v1
 kind: Service
@@ -187,18 +196,6 @@ spec:
   ports:
   - port: 3306
     targetPort: 3306
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: dbs-have-initialized-claim
-  namespace: {{ .Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Ki
 ---
 {{ if .Values.mysql.sqlInitContent }}
 apiVersion: v1
