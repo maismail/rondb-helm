@@ -17,14 +17,14 @@ spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.mgmdData }}
+            storage: 10Mi
     - metadata:
         name: rondb-mgmd-log
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.mgmdLogs }}
+            storage: 20Mi
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete

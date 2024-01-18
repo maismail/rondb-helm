@@ -43,6 +43,12 @@ helm upgrade -i my-rondb .
 
 # To merge default values with custom ones:
 helm upgrade -i my-rondb . --values ./values.minikube.mini.yaml
+
+# Remove again
+helm delete my-rondb
+
+# Remove PVCs
+kubectl delete pvc --all 
 ```
 
 ## Minikube Values files

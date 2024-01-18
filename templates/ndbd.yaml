@@ -37,19 +37,33 @@ spec:
   # even if it is rescheduled to a different node.
   volumeClaimTemplates:
     - metadata:
-        name: rondb-ndbmtd-data
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: {{ $.Values.resources.requests.storage.ndbmtdData }}
-    - metadata:
         name: rondb-ndbmtd-log
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.ndbmtdLogs }}
+            storage: 2Gi
+    - metadata:
+        name: rondb-ndbmtd-disk-columns
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.requests.storage.diskColumnGiB }}Gi
+    - metadata:
+        name: rondb-ndbmtd-redo-logs
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.requests.storage.redoLogGiB }}Gi
+    - metadata:
+        name: rondb-ndbmtd-undo-logs
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.requests.storage.undoLogsGiB }}Gi
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -93,8 +107,9 @@ spec:
         - /bin/bash
         - -c
         - |
-          until nslookup mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local; do
-            echo "Waiting for mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local to be resolvable..."
+          MGMD_HOST=mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
+          until nslookup $MGMD_HOST; do
+            echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
       containers:
@@ -160,10 +175,14 @@ spec:
           periodSeconds: 15
           timeoutSeconds: 20
         volumeMounts:
-        - name: rondb-ndbmtd-data
-          mountPath: /srv/hops/mysql-cluster/ndb_data
         - name: rondb-ndbmtd-log
           mountPath: /srv/hops/mysql-cluster/log
+        - name: rondb-ndbmtd-disk-columns
+          mountPath: /srv/hops/mysql-cluster/ndb_data_files
+        - name: rondb-ndbmtd-redo-logs
+          mountPath: /srv/hops/mysql-cluster/ndb_data
+        - name: rondb-ndbmtd-undo-logs
+          mountPath: /srv/hops/mysql-cluster/ndb_undo_files
 ---
 apiVersion: v1
 kind: Service

@@ -35,6 +35,10 @@ resources:
       mysqlds: 650M
       rdrs: 100M
       benchs: 100M
+    storage:
+      diskColumnGiB: 4
+      redoLogGiB: 4
+      undoLogsGiB: 4
 
 rondbConfig:
   NumCPUs: 4
@@ -45,7 +49,6 @@ rondbConfig:
   TransactionMemory: 300M
   SharedGlobalMemory: 300M
   ReservedConcurrentOperations: 50000
-  FragmentLogFileSize: 128M
   MaxNoOfConcurrentOperations: 200000
 
   EmptyApiSlots: 0

@@ -49,10 +49,9 @@ resources:
       rdrs: 100M
       benchs: 100M
     storage:
-      mgmdData: 10Mi
-      mgmdLogs: 20Mi
-      ndbmtdData: 1Gi
-      ndbmtdLogs: 1Gi
+      diskColumnGiB: 2
+      redoLogGiB: 2
+      undoLogsGiB: 2
 
 rondbConfig:
   NumCPUs: 4
@@ -63,7 +62,6 @@ rondbConfig:
   TransactionMemory: 300M
   SharedGlobalMemory: 300M
   ReservedConcurrentOperations: 50000
-  FragmentLogFileSize: 128M
   MaxNoOfConcurrentOperations: 200000
 
   EmptyApiSlots: 8
