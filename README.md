@@ -13,16 +13,11 @@
      1. Change the config.ini (important in case MGMds restart later in time)
      2. Increase the StatefulSet replicas.
 
-- Increase data node memory:
-  1. Make sure we have >=2 active data node replicas
-  2. Increase TotalMemoryConfig in values.yaml
-  3. Recreate MGMds
-  4. Increase memory limits of ndbmtds in values.yaml. The ndbdmtds will then perform a rolling update.
-
 ## TODO
 
 - Create more values.yaml files for production settings
 - Move MySQL passwords in secrets
+- Make data node memory changeable
 - Add YCSB to benchmark options
 - Figure out how to run `SELECT count(*) FROM ndbinfo.nodes` as MySQL readiness check.
   - Using  `--defaults-file=$RONDB_DATA_DIR/my.cnf` and `GRANT SELECT ON ndbinfo.nodes TO 'hopsworks'@'%';` does not work

@@ -86,10 +86,10 @@ spec:
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mysqlds }}
-            memory: {{ .Values.resources.limits.memory.mysqlds }}
+            memory: {{ .Values.resources.limits.memory.mysqldMiB }}Mi
           requests:
             cpu: {{ .Values.resources.requests.cpus.mysqlds }}
-            memory: {{ .Values.resources.requests.memory.mysqlds }}
+            memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
         env:
           - name: HOST_GROUP_ID
             value: "0"

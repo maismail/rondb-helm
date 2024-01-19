@@ -69,11 +69,11 @@ spec:
           - containerPort: 5406
         resources:
           limits:
-            cpu: {{ .Values.resources.limits.cpus.ndbmtds }}
-            memory: {{ .Values.resources.limits.memory.ndbmtds }}
+            cpu: {{ .Values.resources.limits.cpus.rdrs }}
+            memory: {{ .Values.resources.limits.memory.rdrsMiB }}Mi
           requests:
-            cpu: {{ .Values.resources.requests.cpus.ndbmtds }}
-            memory: {{ .Values.resources.requests.memory.ndbmtds }}
+            cpu: {{ .Values.resources.requests.cpus.rdrs }}
+            memory: {{ .Values.resources.requests.memory.rdrsMiB }}Mi
         env:
           - name: HOST_GROUP_ID
             value: "0"

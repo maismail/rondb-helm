@@ -129,10 +129,10 @@ spec:
         resources:
           limits:
             cpu: {{ $.Values.resources.limits.cpus.ndbmtds }}
-            memory: {{ $.Values.resources.limits.memory.ndbmtds }}
+            memory: {{ $.Values.resources.limits.memory.ndbmtdsMiB }}Mi
           requests:
             cpu: {{ $.Values.resources.requests.cpus.ndbmtds }}
-            memory: {{ $.Values.resources.requests.memory.ndbmtds }}
+            memory: {{ $.Values.resources.requests.memory.ndbmtdsMiB }}Mi
         env:
           - name: HOST_GROUP_ID
             value: "0"

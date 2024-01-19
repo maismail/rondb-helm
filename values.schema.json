@@ -131,15 +131,11 @@
         },
         "rondbConfig": {
             "type": "object",
-            "description": "Configurations for RonDB's config.ini",
+            "description": "Configurations for RonDB's config.ini. Memory configurations are in binary SI units (i.e. 1G = 1GiB = 1024MiB).",
             "properties": {
                 "NumCPUs": {
                     "type": "integer",
                     "minimum": 1
-                },
-                "TotalMemoryConfig": {
-                    "type": "string",
-                    "description": "The containers will otherwise assume that they can occupy the entire node's memory (at least in minikube + Docker driver)"
                 },
                 "MaxNoOfTables": {
                     "type": "integer"
@@ -179,7 +175,6 @@
             },
             "required": [
                 "NumCPUs",
-                "TotalMemoryConfig",
                 "MaxNoOfTables",
                 "MaxNoOfAttributes",
                 "MaxNoOfTriggers",
@@ -284,20 +279,18 @@
             "type": "object",
             "description": "Memory resources per RonDB service type",
             "properties": {
-                "mgmds": {
-                    "type": "string"
+                "ndbmtdsMiB": {
+                    "type": "number"
                 },
-                "ndbmtds": {
-                    "type": "string"
+                "mysqldMiB": {
+                    "type": "number",
+                    "description": "This can usually be kept at the default independent of the load"
                 },
-                "mysqlds": {
-                    "type": "string"
+                "rdrsMiB": {
+                    "type": "number"
                 },
-                "rdrs": {
-                    "type": "string"
-                },
-                "benchs": {
-                    "type": "string"
+                "benchsMiB": {
+                    "type": "number"
                 }
             }
         }

@@ -48,10 +48,10 @@ spec:
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mgmds }}
-            memory: {{ .Values.resources.limits.memory.mgmds }}
+            memory: 100Mi
           requests:
             cpu: {{ .Values.resources.requests.cpus.mgmds }}
-            memory: {{ .Values.resources.requests.memory.mgmds }}
+            memory: 50Mi
         env:
           - name: HOST_GROUP_ID
             value: "0"

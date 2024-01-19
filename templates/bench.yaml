@@ -50,10 +50,10 @@ spec:
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.benchs }}
-            memory: {{ .Values.resources.limits.memory.benchs }}
+            memory: {{ .Values.resources.limits.memory.benchsMiB }}Mi
           requests:
             cpu: {{ .Values.resources.requests.cpus.benchs }}
-            memory: {{ .Values.resources.requests.memory.benchs }}
+            memory: {{ .Values.resources.requests.memory.benchsMiB }}Mi
         env:
           - name: HOST_GROUP_ID
             value: "0"
