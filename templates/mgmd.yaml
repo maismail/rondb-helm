@@ -35,7 +35,7 @@ spec:
       labels:
         rondbService: mgmd
     spec:
-      {{- include "rondb.imagePullSecrets" . | indent 6 }}
+      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       containers:
       - name: mgmd
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}

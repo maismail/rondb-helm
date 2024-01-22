@@ -28,7 +28,7 @@ spec:
       labels:
         rondbService: mysqld
     spec:
-      {{- include "rondb.imagePullSecrets" . | indent 6 }}
+      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

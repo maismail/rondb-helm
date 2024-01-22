@@ -8,7 +8,7 @@ spec:
   parallelism: 1
   template:
     spec:
-      {{- include "rondb.imagePullSecrets" . | indent 6 }}
+      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       restartPolicy: OnFailure
       initContainers:
       - name: mysqld-dependency-check

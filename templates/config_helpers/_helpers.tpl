@@ -8,23 +8,6 @@
 {{- end -}}
 
 {{/*
-Resolve imagePullSecrets value
-*/}}
-{{- define "rondb.imagePullSecrets" -}}
-{{- if and .Values.global .Values.global.imagePullSecrets }}
-imagePullSecrets:
-{{- range .Values.global.imagePullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- else if .Values.imagePullSecrets }}
-imagePullSecrets:
-{{- range .Values.imagePullSecrets }}
-  - name: {{ . }}
-{{- end }}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Create the main Hopsworks user
 */}}
 {{- define "rondb.sqlInitContent" -}}

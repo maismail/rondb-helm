@@ -1,0 +1,6 @@
+dependencies:
+- name: hopsworkslib
+  repository: file://../hopsworkslib
+  version: 0.1.0
+digest: sha256:8da40604749bb61883370e86034ef89b33b085e45e9d7e2b05af82cf1480d690
+generated: "2024-01-19T17:48:04.882620668+01:00"
