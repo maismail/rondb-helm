@@ -52,6 +52,7 @@ spec:
                   values:
                   - mysqld
               topologyKey: topology.kubernetes.io/zone
+{{- include "rondb.SecurityContext" . | indent 6 }}
       initContainers:
       - name: datanode-dependency-check
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
@@ -78,9 +79,6 @@ spec:
         - -c
         - |
 {{ include "entrypoint_mysqld" . | indent 10 }}
-        args:
-          - --agument-that-will-be-omitted
-          - mysqld
         ports:
           - containerPort: 3306
         resources:
@@ -91,8 +89,6 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.mysqlds }}
             memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
         env:
-          - name: HOST_GROUP_ID
-            value: "0"
           # TODO: Add this to secrets
           - name: MYSQL_ROOT_PASSWORD
             value: {{ .Values.mysql.rootPassword }}

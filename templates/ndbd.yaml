@@ -75,7 +75,8 @@ spec:
         rondbService: ndbmtd
         nodeGroup: {{ $nodeGroup | quote }}
     spec:
-      {{- include "hopsworkslib.imagePullSecrets" $ | indent 6 }}
+{{- include "hopsworkslib.imagePullSecrets" $ | indent 6 }}
+{{- include "rondb.SecurityContext" $ | indent 6 }}
       affinity:
         podAntiAffinity:
 {{ if not $.Values.isLocalCluster }}
@@ -103,11 +104,13 @@ spec:
       initContainers:
       - name: mgmd-dependency-check
         image: {{ include "image_registry" $standardContext }}rondb-standalone:{{ $.Values.image.tag }}
+        env:
+        - name: MGMD_HOST
+          value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
         command:
         - /bin/bash
         - -c
         - |
-          MGMD_HOST=mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
           until nslookup $MGMD_HOST; do
             echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))
@@ -120,10 +123,6 @@ spec:
         - -c
         - |
 {{ include "pre_entrypoint_ndbmtds" . | indent 10 }}
-        args:
-          - --agument-that-will-be-omitted
-          - ndbmtd
-          - --ndb-connectstring=mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186
         ports:
           - containerPort: 11860
         resources:
@@ -134,8 +133,8 @@ spec:
             cpu: {{ $.Values.resources.requests.cpus.ndbmtds }}
             memory: {{ $.Values.resources.requests.memory.ndbmtdsMiB }}Mi
         env:
-          - name: HOST_GROUP_ID
-            value: "0"
+          - name: MGM_CONNECTION_STRING
+            value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186
           - name: NODE_GROUP
             value: {{ $nodeGroup | quote }}
           - name: POD_NAME
@@ -154,7 +153,7 @@ spec:
                 POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
                 NODE_ID_OFFSET=$(($NODE_GROUP*3))
                 NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
-                ./docker/rondb_standalone/healthcheck.sh mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186 $NODE_ID
+                ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
           initialDelaySeconds: 15
           failureThreshold: 100
           periodSeconds: 15
@@ -169,7 +168,7 @@ spec:
                 POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
                 NODE_ID_OFFSET=$(($NODE_GROUP*3))
                 NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
-                ./docker/rondb_standalone/healthcheck.sh mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186 $NODE_ID
+                ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
           initialDelaySeconds: 10
           failureThreshold: 5
           periodSeconds: 15

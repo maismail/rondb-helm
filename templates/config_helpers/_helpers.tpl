@@ -21,3 +21,13 @@ FLUSH PRIVILEGES;
 
 {{- end -}}
 {{- end -}}
+
+{{- define "rondb.SecurityContext" -}}
+# This corresponds to the MySQL user/group which is created in the Dockerfile
+# Beware that a lot of files & directories are created in the RonDB Dockerfile, which belong
+# to the MySQL user/group.
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+{{- end }}

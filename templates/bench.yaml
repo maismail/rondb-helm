@@ -55,8 +55,6 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.benchs }}
             memory: {{ .Values.resources.requests.memory.benchsMiB }}Mi
         env:
-          - name: HOST_GROUP_ID
-            value: "0"
         volumeMounts:
         # Not important, but can help to debug benchmarks
         - name: benchmarks

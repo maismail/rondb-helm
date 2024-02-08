@@ -26,6 +26,5 @@ else
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ exists - we have started the ndbmtds here before. No initial start is needed."
 fi
 
-# Original entrypoint
-source ./docker/rondb_standalone/entrypoints/main.sh "$@" --ndb-nodeid=$NODE_ID $INITIAL_START
+exec ndbmtd --nodaemon --ndb-nodeid=$NODE_ID $INITIAL_START --ndb-connectstring=$MGM_CONNECTION_STRING
 {{ end }}

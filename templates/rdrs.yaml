@@ -63,7 +63,7 @@ spec:
         command:
           - /bin/bash
           - -c
-          - ./docker/rondb_standalone/entrypoints/main.sh rdrs -config=/srv/hops/mysql-cluster/rest_api.json
+          - rdrs -config=/srv/hops/mysql-cluster/rest_api.json
         ports:
           - containerPort: 4406
           - containerPort: 5406
@@ -75,8 +75,6 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.rdrs }}
             memory: {{ .Values.resources.requests.memory.rdrsMiB }}Mi
         env:
-          - name: HOST_GROUP_ID
-            value: "0"
           - name: POD_NAME
             valueFrom:
               fieldRef:

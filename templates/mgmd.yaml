@@ -35,14 +35,15 @@ spec:
       labels:
         rondbService: mgmd
     spec:
-      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+{{- include "rondb.SecurityContext" $ | indent 6 }}
       containers:
       - name: mgmd
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
         command:
           - /bin/bash
           - -c
-          - ./docker/rondb_standalone/entrypoints/main.sh ndb_mgmd --ndb-nodeid=65 --initial
+          - ndb_mgmd --nodaemon --ndb-nodeid=65 --initial -f "$RONDB_DATA_DIR/config.ini" --configdir="$RONDB_DATA_DIR/log"
         ports:
           - containerPort: 1186
         resources:
@@ -53,8 +54,6 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.mgmds }}
             memory: 50Mi
         env:
-          - name: HOST_GROUP_ID
-            value: "0"
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: rondb-configs

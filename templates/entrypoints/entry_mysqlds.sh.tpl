@@ -50,7 +50,7 @@ done
 # CONFIGURE MYSQLD & INITIALIZE DATABASES #
 ###########################################
 
-source ./docker/rondb_standalone/entrypoints/mysqld_configure.sh "$@"
+source ./docker/rondb_standalone/entrypoints/mysqld_configure.sh ""
 
 if [[ $POD_NAME != *"-0" ]]; then
     echo "[K8s Entrypoint MySQLd] Not initializing MySQL databases because this is not the first MySQLd pod"
