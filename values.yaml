@@ -1,4 +1,5 @@
 isLocalCluster: false
+terminationGracePeriodSeconds: 60
 
 # TODO: Consider using Chart.appVersion for tag instead
 image:

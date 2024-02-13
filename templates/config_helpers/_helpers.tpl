@@ -7,6 +7,13 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "rondb.nodeId" -}}
+# Equivalent to replication factor of pod
+POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
+NODE_ID_OFFSET=$(($NODE_GROUP*3))
+NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
+{{- end -}}
+
 {{/*
 Create the main Hopsworks user
 */}}

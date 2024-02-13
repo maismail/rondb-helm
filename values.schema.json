@@ -5,6 +5,12 @@
             "type": "boolean",
             "description": "Whether we are for example running on Minikube"
         },
+        "terminationGracePeriodSeconds": {
+            "type": "integer",
+            "description": "TerminationGracePeriodSeconds for data nodes. Important for scaling down data node replicas.",
+            "default": 60,
+            "minimum": 30
+        },
         "image": {
             "type": "object",
             "description": "RonDB container image",

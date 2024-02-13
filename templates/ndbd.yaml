@@ -1,4 +1,3 @@
-{{- $standardContext := . -}}  {{- /* The range will re-define the '.' operator */ -}}
 {{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
 apiVersion: apps/v1
 kind: StatefulSet
@@ -101,12 +100,19 @@ spec:
                   values:
                   - {{ $nodeGroup | quote }}
               topologyKey: topology.kubernetes.io/zone
+      terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       initContainers:
       - name: mgmd-dependency-check
-        image: {{ include "image_registry" $standardContext }}rondb-standalone:{{ $.Values.image.tag }}
+        image: {{ include "image_registry" $ }}rondb-standalone:{{ $.Values.image.tag }}
         env:
         - name: MGMD_HOST
           value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
+        - name: NODE_GROUP
+          value: {{ $nodeGroup | quote }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         command:
         - /bin/bash
         - -c
@@ -115,14 +121,19 @@ spec:
             echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
+
+{{ include "rondb.nodeId" $ | indent 10 }}
+
+          echo "Activating node id $NODE_ID via MGM client"
+          ndb_mgm --ndb-connectstring=$MGMD_HOST:1186 -e "$NODE_ID activate"
       containers:
       - name: ndbmtd
-        image: {{ include "image_registry" $standardContext }}rondb-standalone:{{ $.Values.image.tag }}
+        image: {{ include "image_registry" $ }}rondb-standalone:{{ $.Values.image.tag }}
         command:
         - /bin/bash
         - -c
         - |
-{{ include "pre_entrypoint_ndbmtds" . | indent 10 }}
+{{ include "pre_entrypoint_ndbmtds" $ | indent 10 }}
         ports:
           - containerPort: 11860
         resources:
@@ -143,17 +154,16 @@ spec:
                 fieldPath: metadata.name
           - name: FILE_SYSTEM_PATH
             value: /srv/hops/mysql-cluster/ndb_data
+          - name: MGMD_HOST
+            value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
         startupProbe:
           exec:
             command:
             - /bin/bash
             - -c
             - |
-                # Equivalent to replication factor of pod
-                POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
-                NODE_ID_OFFSET=$(($NODE_GROUP*3))
-                NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
-                ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
+{{ include "rondb.nodeId" $ | indent 14 }}
+              ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
           initialDelaySeconds: 15
           failureThreshold: 100
           periodSeconds: 15
@@ -164,11 +174,8 @@ spec:
             - /bin/bash
             - -c
             - |
-                # Equivalent to replication factor of pod
-                POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
-                NODE_ID_OFFSET=$(($NODE_GROUP*3))
-                NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
-                ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
+{{ include "rondb.nodeId" $ | indent 14 }}
+              ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
           initialDelaySeconds: 10
           failureThreshold: 5
           periodSeconds: 15
