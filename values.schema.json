@@ -39,7 +39,10 @@
                     "type": "string",
                     "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent though, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
                 }
-            }
+            },
+            "required": [
+                "rootPassword"
+            ]
         },
         "clusterSize": {
             "type": "object",
@@ -197,13 +200,16 @@
             "description": "Whether, which and how to run a benchmarking job on the cluster",
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Whether to run a benchmarking job on the cluster"
                 },
                 "mysqlUsername": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The MySQL user to run the benchmarks with. It will automatically be given the necessary privileges on the benchmark databases. This field is required so that benchmarking jobs can be enabled once the cluster is already running."
                 },
                 "mysqlPassword": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "This field is required so that benchmarking jobs can be enabled once the cluster is already running."
                 },
                 "type": {
                     "description": "Which benchmarking job to run. 'Multi' refers to multiple MySQLd servers to run against",

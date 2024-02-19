@@ -7,7 +7,6 @@ image:
   tag: 22.10.1-0.4
 
 mysql:
-  rootPassword: "Abc123?eeee"
   sqlInitContent: |
     CREATE TABLE IF NOT EXISTS ycsb.usertable (
         YCSB_KEY VARCHAR(255) PRIMARY KEY,
@@ -69,7 +68,6 @@ rondbConfig:
 benchmarking:
   enabled: false
   mysqlUsername: "bench"
-  mysqlPassword: "Abc123?e"
   type: "sysbench"
   dbt2:
     numWarehouses: 4

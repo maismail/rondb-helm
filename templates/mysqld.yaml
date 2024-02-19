@@ -89,18 +89,18 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.mysqlds }}
             memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
         env:
-          # TODO: Add this to secrets
           - name: MYSQL_ROOT_PASSWORD
-            value: {{ .Values.mysql.rootPassword }}
-{{ if not .Values.mysql.rootPassword }}
-          - name: MYSQL_ALLOW_EMPTY_PASSWORD
-            value: "true"
-{{ end }}
-          # TODO: Add this to secrets
+            valueFrom:
+              secretKeyRef:
+                name: mysql-user-passwords
+                key: root-password
           - name: MYSQL_BENCH_USER
             value: {{ .Values.benchmarking.mysqlUsername }}
           - name: MYSQL_BENCH_PASSWORD
-            value: {{ .Values.benchmarking.mysqlPassword }}
+            valueFrom:
+              secretKeyRef:
+                name: mysql-user-passwords
+                key: bench-password
           - name: CONNECTIONS_PER_MYSQLD
             value: {{ .Values.rondbConfig.MySQLdSlotsPerNode | quote}}
           - name: POD_NAME
@@ -192,6 +192,15 @@ spec:
   ports:
   - port: 3306
     targetPort: 3306
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-user-passwords
+immutable: true
+stringData:
+  root-password: {{ .Values.mysql.rootPassword }}
+  bench-password: {{ .Values.benchmarking.mysqlPassword }}
 ---
 {{ if .Values.mysql.sqlInitContent }}
 apiVersion: v1

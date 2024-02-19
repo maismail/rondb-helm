@@ -5,12 +5,12 @@
 - Create custom-size, cross-AZ cluster
 - Horizontal auto-scaling of MySQLds & RDRS'
 
-## Capabilities with Manual Intervention
+## Capabilities of Manual Intervention
 
 - Scale data node replicas:
-  1. Use the MGM client to activate Node Ids
+  1. Use the MGM client to activate Node IDs
   2. Increase `activeDataReplicas` in values.yaml. This will 
-     1. Change the config.ini (important in case MGMds restart later in time)
+     1. Change the config.ini (important in case MGMds restart later)
      2. Increase the StatefulSet replicas.
 
 ## TODO
@@ -34,45 +34,46 @@ helm lint
 helm template .
 
 # Install and/or upgrade:
-helm upgrade -i my-rondb .
-
-# To merge default values with custom ones:
-helm upgrade -i my-rondb . --values ./values.minikube.mini.yaml
+helm upgrade -i my-rondb \
+    --values ./values.minikube.small.yaml \
+    --set-file mysql.rootPassword=./mysql.password.root.dummy.txt \
+    --set-file benchmarking.mysqlPassword=./mysql.password.bench.dummy.txt \
+    .
 
 # Remove again
 helm delete my-rondb
 
 # Remove PVCs
-kubectl delete pvc --all 
+kubectl delete pvc --all
 ```
 
 ## Minikube Values files
 
-The minikube.values.yaml files are for single-machine configurations. Use other values for production settings.
+The `minikube.values.yaml` files are for single-machine configurations. Use other values for production settings.
 
 - **mini**: 
   - Cluster setup: 1 MGM server, 1 data node, 1 MySQL server and 1 API node
-  - Docker resource utilisation: 2.5 GB of memory and up to 4 CPUs
+  - Docker resource utilization: 2.5 GB of memory and up to 4 CPUs
   - Recommended machine: 8 GB of memory
 
 - **small** (default):
   - Cluster setup: 1 MGM server, 2 data nodes, 2 MySQL servers and 1 API node
-  - Docker resource utilisation: 6 GB of memory and up to 16 CPUs
+  - Docker resource utilization: 6 GB of memory and up to 16 CPUs
   - Recommended machine: 16 GB of memory and 16 CPUs
 
 - **medium**:
   - Cluster setup: Same as **small**
-  - Docker resource utilisation: 16 GB of memory and up to 16 CPUs
+  - Docker resource utilization: 16 GB of memory and up to 16 CPUs
   - Recommended machine: 32 GB of memory and 16 CPUs
 
 - **large**:
   - Cluster setup: Same as **small**
-  - Docker resource utilisation: 20 GB of memory and up to 32 CPUs
+  - Docker resource utilization: 20 GB of memory and up to 32 CPUs
   - Recommended machine: 32 GB of memory and 32 CPUs
 
 - **xlarge**:
   - Cluster setup: Same as **small**
-  - Docker resource utilisation: 30 GB of memory and up to 50 CPUs
+  - Docker resource utilization: 30 GB of memory and up to 50 CPUs
   - Recommended machine: 64 GB of memory and 64 CPUs
 
 ## Benchmarking
