@@ -92,15 +92,15 @@ spec:
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: mysql-user-passwords
-                key: root-password
+                name: {{ .Values.mysql.rootPasswordSecret.name }}
+                key: {{ .Values.mysql.rootPasswordSecret.key }}
           - name: MYSQL_BENCH_USER
             value: {{ .Values.benchmarking.mysqlUsername }}
           - name: MYSQL_BENCH_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: mysql-user-passwords
-                key: bench-password
+                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
+                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
           - name: CONNECTIONS_PER_MYSQLD
             value: {{ .Values.rondbConfig.MySQLdSlotsPerNode | quote}}
           - name: POD_NAME
@@ -192,15 +192,6 @@ spec:
   ports:
   - port: 3306
     targetPort: 3306
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-user-passwords
-immutable: true
-stringData:
-  root-password: {{ .Values.mysql.rootPassword }}
-  bench-password: {{ .Values.benchmarking.mysqlPassword }}
 ---
 {{ if .Values.mysql.sqlInitContent }}
 apiVersion: v1

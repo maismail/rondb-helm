@@ -33,14 +33,22 @@ Kubernetes Jobs to add:
 helm lint
 helm template .
 
+# Create required secrets (not part of Helmchart because visible with `helm get values`)
+kubectl create secret generic mysql-passwords \
+  --from-file=root=./mysql.password.root.dummy.txt \
+  --from-file=bench=./mysql.password.bench.dummy.txt
+
 # Install and/or upgrade:
 helm upgrade -i my-rondb \
     --values ./values.minikube.small.yaml \
-    --set-file mysql.rootPassword=./mysql.password.root.dummy.txt \
-    --set-file benchmarking.mysqlPassword=./mysql.password.bench.dummy.txt \
+    --set mysql.rootPasswordSecret.name=mysql-passwords \
+    --set mysql.rootPasswordSecret.key=root \
+    --set benchmarking.mysqlPasswordSecret.name=mysql-passwords \
+    --set benchmarking.mysqlPasswordSecret.key=bench \
     .
 
 # Remove again
+kubectl delete secret mysql-passwords
 helm delete my-rondb
 
 # Remove PVCs

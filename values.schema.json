@@ -32,8 +32,8 @@
             "type": "object",
             "description": "How to initialize MySQL",
             "properties": {
-                "rootPassword": {
-                    "type": "string"
+                "rootPasswordSecret": {
+                    "$ref": "#/$defs/secret"
                 },
                 "sqlInitContent": {
                     "type": "string",
@@ -41,7 +41,7 @@
                 }
             },
             "required": [
-                "rootPassword"
+                "rootPasswordSecret"
             ]
         },
         "clusterSize": {
@@ -207,9 +207,8 @@
                     "type": "string",
                     "description": "The MySQL user to run the benchmarks with. It will automatically be given the necessary privileges on the benchmark databases. This field is required so that benchmarking jobs can be enabled once the cluster is already running."
                 },
-                "mysqlPassword": {
-                    "type": "string",
-                    "description": "This field is required so that benchmarking jobs can be enabled once the cluster is already running."
+                "mysqlPasswordSecret": {
+                    "$ref": "#/$defs/secret"
                 },
                 "type": {
                     "description": "Which benchmarking job to run. 'Multi' refers to multiple MySQLd servers to run against",
@@ -254,7 +253,7 @@
             "required": [
                 "enabled",
                 "mysqlUsername",
-                "mysqlPassword",
+                "mysqlPasswordSecret",
                 "type"
             ]
         }
@@ -266,6 +265,20 @@
         "rondbConfig"
     ],
     "$defs": {
+        "secret": {
+            "type": "object",
+            "description": "",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the secret"
+                },
+                "key": {
+                    "type": "string",
+                    "description": "Key in the secret"
+                }
+            }
+        },
         "cpuResources": {
             "type": "object",
             "description": "CPU resources per RonDB service type",
