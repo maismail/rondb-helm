@@ -109,6 +109,33 @@ spec:
                 fieldPath: metadata.name
           - name: MYSQL_DATABASES_INIT_FILE
             value: /etc/pod-info/database-is-initialised.txt
+        # This will block liveliness & readiness probes
+        # If the startupProbe fails, the pod will be killed
+        # The MySQL init takes >20s
+        # The MySQL server will first start up with --no-networking
+        # During this phase, passwords are initialized. Then it is
+        # restarted. Hence, we ping with TCP to make sure it has
+        # restarted.
+        startupProbe:
+          exec:
+            command:
+              - 'mysqladmin'
+              - 'ping'
+              - '-uroot'
+              - '--protocol=tcp'
+          initialDelaySeconds: 5
+          failureThreshold: 70
+          periodSeconds: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          exec:
+            command:
+              - 'mysqladmin'
+              - 'ping'
+              - '-uroot'
+          failureThreshold: 4
+          periodSeconds: 5
+          timeoutSeconds: 2
         readinessProbe:
           exec:
             command:
@@ -118,19 +145,8 @@ spec:
               set -e
               mysql --defaults-file=$RONDB_DATA_DIR/my.cnf \
                 -e "SELECT 1"
-          initialDelaySeconds: 10
-          failureThreshold: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-        livenessProbe:
-          exec:
-            command:
-              - 'mysqladmin'
-              - 'ping'
-              - '-uroot'
-          initialDelaySeconds: 25
-          failureThreshold: 6
-          periodSeconds: 10
+          failureThreshold: 2
+          periodSeconds: 5
           timeoutSeconds: 2
         securityContext:
           capabilities:

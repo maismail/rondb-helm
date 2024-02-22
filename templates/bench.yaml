@@ -6,6 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   parallelism: 1
+  backoffLimit: 1
   template:
     spec:
       {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
@@ -18,16 +19,44 @@ spec:
         - /bin/bash
         - -c
         - |
-          MGMD_HOSTNAME=mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local
           until nslookup $MGMD_HOSTNAME; do
             echo "Waiting for $MGMD_HOSTNAME to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
 
-          until nslookup mysqld.{{ .Release.Namespace }}.svc.cluster.local; do
-            echo "Waiting for mysqld.{{ .Release.Namespace }}.svc.cluster.local to be resolvable..."
+          until nslookup $MYSQLD_LOAD_BALANCER_HOSTNAME; do
+            echo "Waiting for $MYSQLD_LOAD_BALANCER_HOSTNAME to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
+
+          while true; do
+            mysql \
+              -h $MYSQLD_LOAD_BALANCER_HOSTNAME \
+              --protocol=tcp \
+              --port=3306 \
+              --user=$MYSQL_BENCH_USER \
+              -p"$MYSQL_BENCH_PASSWORD" \
+              -e "SELECT 1;"
+
+            if [ $? -eq 0 ]; then
+              echo "Successfully connected to MySQL server"
+              break
+            fi
+            echo "MySQL query failed, retrying in a bit..."
+            sleep 2
+          done
+        env:
+          - name: MGMD_HOSTNAME
+            value: mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local
+          - name: MYSQLD_LOAD_BALANCER_HOSTNAME
+            value: mysqld.{{ .Release.Namespace }}.svc.cluster.local
+          - name: MYSQL_BENCH_USER
+            value: {{ .Values.benchmarking.mysqlUsername }}
+          - name: MYSQL_BENCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
+                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
       containers:
       - name: bench
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
@@ -38,15 +67,39 @@ spec:
         - /bin/bash
         - -c
         - |
-          # Seems like MySQLd can still take a while to start up
-          sleep 10
+          set -e
+          BENCH_DIR=/home/mysql/benchmarks/{{ .Values.benchmarking.type }}
+  
+          # Setting passwords in autobench.conf file
+          RAW_AUTOBENCH_FILEPATH=$BENCH_DIR/autobench-raw.conf
+          AUTOBENCH_FILEPATH=$BENCH_DIR/autobench.conf
+          cp $RAW_AUTOBENCH_FILEPATH $AUTOBENCH_FILEPATH
+          
+          sed -i "/^[ ]*MYSQL_PASSWORD/c\MYSQL_PASSWORD=$MYSQL_BENCH_PASSWORD" $AUTOBENCH_FILEPATH
+
+          set +e
           bench_run.sh \
             --verbose \
-            --default-directory /home/mysql/benchmarks/{{ .Values.benchmarking.type }}
+            --default-directory $BENCH_DIR
 {{- if contains "dbt2" .Values.benchmarking.type }}
             --generate-dbt2-data
-{{ end }}
-          cat /home/mysql/benchmarks/{{ .Values.benchmarking.type }}/final_result.txt
+{{- end }}
+
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            # TODO: Print different files depending on benchmark
+            echo "Running benchmark script failed; showing intermediate results"
+            cat $BENCH_DIR/sysbench_results/oltp_rw_0_0.res
+            exit $exit_code
+          else
+            cat $BENCH_DIR/final_result.txt
+          fi
+        env:
+          - name: MYSQL_BENCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
+                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.benchs }}
@@ -54,25 +107,24 @@ spec:
           requests:
             cpu: {{ .Values.resources.requests.cpus.benchs }}
             memory: {{ .Values.resources.requests.memory.benchsMiB }}Mi
-        env:
         volumeMounts:
         # Not important, but can help to debug benchmarks
         - name: benchmarks
           mountPath: /home/mysql/benchmarks
 
         - name: benchmark-configs
-          mountPath: /home/mysql/benchmarks/sysbench/autobench.conf
+          mountPath: /home/mysql/benchmarks/sysbench/autobench-raw.conf
           subPath: autobench_sysbench.conf
 
         - name: benchmark-configs
-          mountPath: /home/mysql/benchmarks/dbt2_single/autobench.conf
+          mountPath: /home/mysql/benchmarks/dbt2_single/autobench-raw.conf
           subPath: autobench_dbt2.conf
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/dbt2_single/dbt2_run_1.conf
           subPath: dbt2_single_run.conf
 
         - name: benchmark-configs
-          mountPath: /home/mysql/benchmarks/dbt2_multi/autobench.conf
+          mountPath: /home/mysql/benchmarks/dbt2_multi/autobench-raw.conf
           subPath: autobench_dbt2.conf
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/dbt2_multi/dbt2_run_1.conf

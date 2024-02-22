@@ -14,7 +14,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Calculate Node Ids based on Pod name & sed my.cnf file
 
 RAW_MYCNF_FILEPATH=/srv/hops/mysql-cluster/my-raw.cnf
-MYCNF_FILEPATH=/srv/hops/mysql-cluster/my.cnf
+MYCNF_FILEPATH=$RONDB_DATA_DIR/my.cnf
 
 cp $RAW_MYCNF_FILEPATH $MYCNF_FILEPATH
 
@@ -30,8 +30,10 @@ NODES_SEQ=$(seq -s, $FIRST_NODE_ID $LAST_NODE_ID)
 
 echo "[K8s Entrypoint MySQLd] Running Node Ids: $NODES_SEQ"
 
-# Replace the existing line with the new sequence in my.cnf
+# Replace the existing lines in my.cnf
 sed -i "/ndb-cluster-connection-pool-nodeids/c\ndb-cluster-connection-pool-nodeids=$NODES_SEQ" $MYCNF_FILEPATH
+# Note that this is used for liveliness/readiness probes
+sed -i "/^[ ]*password[ ]*=/c\password=$MYSQL_BENCH_PASSWORD" $MYCNF_FILEPATH
 
 ###############################
 # CHECK OUR DNS IS RESOLVABLE #
