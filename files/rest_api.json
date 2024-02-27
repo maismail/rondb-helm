@@ -3,11 +3,11 @@
         "APIVersion": "0.1.0"
     },
     "REST": {
-        "ServerIP": "localhost",
+        "ServerIP": "0.0.0.0",
         "ServerPort": 4406
     },
     "GRPC": {
-        "ServerIP": "localhost",
+        "ServerIP": "0.0.0.0",
         "ServerPort": 5406
     },
     "RonDB": {
