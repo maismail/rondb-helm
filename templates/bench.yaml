@@ -55,8 +55,7 @@ spec:
           - name: MYSQL_BENCH_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
-                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
+                {{- toYaml .Values.benchmarking.credentialsSecret | nindent 16 }}
       containers:
       - name: bench
         image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
@@ -98,8 +97,7 @@ spec:
           - name: MYSQL_BENCH_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
-                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
+                {{- toYaml .Values.benchmarking.credentialsSecret | nindent 16 }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.benchs }}

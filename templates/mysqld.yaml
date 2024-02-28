@@ -92,15 +92,13 @@ spec:
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.mysql.rootPasswordSecret.name }}
-                key: {{ .Values.mysql.rootPasswordSecret.key }}
+                {{- toYaml .Values.mysql.rootCredentialsSecret | nindent 16 }}
           - name: MYSQL_BENCH_USER
             value: {{ .Values.benchmarking.mysqlUsername }}
           - name: MYSQL_BENCH_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.benchmarking.mysqlPasswordSecret.name }}
-                key: {{ .Values.benchmarking.mysqlPasswordSecret.key }}
+                {{- toYaml .Values.benchmarking.credentialsSecret | nindent 16 }}
           - name: CONNECTIONS_PER_MYSQLD
             value: {{ .Values.rondbConfig.MySQLdSlotsPerNode | quote}}
           - name: POD_NAME

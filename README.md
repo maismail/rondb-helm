@@ -40,12 +40,7 @@ kubectl create secret generic mysql-passwords \
 
 # Install and/or upgrade:
 helm upgrade -i my-rondb \
-    --values ./values.minikube.small.yaml \
-    --set mysql.rootPasswordSecret.name=mysql-passwords \
-    --set mysql.rootPasswordSecret.key=root \
-    --set benchmarking.mysqlPasswordSecret.name=mysql-passwords \
-    --set benchmarking.mysqlPasswordSecret.key=bench \
-    .
+    --values ./values.minikube.small.yaml .
 
 # Remove again
 kubectl delete secret mysql-passwords

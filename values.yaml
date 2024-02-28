@@ -12,6 +12,9 @@ mysql:
         YCSB_KEY VARCHAR(255) PRIMARY KEY,
         FIELD0 varbinary(4096)
     );
+  rootCredentialsSecret:
+    name: "mysql-passwords"
+    key: "root"
 
 clusterSize:
   activeDataReplicas: 1
@@ -68,6 +71,9 @@ rondbConfig:
 benchmarking:
   enabled: false
   mysqlUsername: "bench"
+  credentialsSecret:
+    name: "mysql-passwords"
+    key: "bench"
   type: "sysbench"
   dbt2:
     numWarehouses: 4
