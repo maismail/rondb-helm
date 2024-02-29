@@ -16,6 +16,11 @@ mysql:
     name: "mysql-passwords"
     key: "root"
 
+  service:
+    annotations:
+      consul.hashicorp.com/service-name: mysql
+      consul.hashicorp.com/service-tags: onlinefs
+
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1

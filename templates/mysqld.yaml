@@ -181,6 +181,10 @@ metadata:
   # Match the spec.serviceName
   name: mysqld-cluster-ip
   namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- range $k, $v := .Values.mysql.service.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None
