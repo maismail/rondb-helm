@@ -155,6 +155,8 @@ spec:
         env:
           - name: MGM_CONNECTION_STRING
             value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local:1186
+          - name: MGMD_HOST
+            value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
           - name: NODE_GROUP
             value: {{ $nodeGroup | quote }}
           - name: POD_NAME
@@ -163,8 +165,6 @@ spec:
                 fieldPath: metadata.name
           - name: FILE_SYSTEM_PATH
             value: /srv/hops/mysql-cluster/ndb_data
-          - name: MGMD_HOST
-            value: mgmds-0.mgmd.{{ $.Release.Namespace }}.svc.cluster.local
         startupProbe:
           exec:
             command:
@@ -174,10 +174,39 @@ spec:
 {{ include "rondb.nodeId" $ | indent 14 }}
               ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
           initialDelaySeconds: 15
-          failureThreshold: 100
-          periodSeconds: 15
-          timeoutSeconds: 15
+          failureThreshold: 150
+          periodSeconds: 10
+          timeoutSeconds: 10
+        # This has to account for a failing MGMd as well.
+        # There is no point in killing the data node
+        # if the MGMd is not up / ready.
         livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set +e
+              nslookup $MGMD_HOST > /dev/null 2>&1
+              NS_LOOKUP_EXIT_CODE=$!
+              if [ $NS_LOOKUP_EXIT_CODE -ne 0 ]; then
+                  echo "MGMd at '$MGMD_HOST' is not ready, we cannot check whether the data node is connected"
+                  exit 0
+              fi
+              set -e
+{{ include "rondb.nodeId" $ | indent 14 }}
+              ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
+          initialDelaySeconds: 5
+          failureThreshold: 10
+          periodSeconds: 10
+          timeoutSeconds: 10
+        # Adding this reduces the likelihood of continuing with a
+        # rolling update when something is off. We might not want
+        # to restart the data node just yet, but we want to flash
+        # some warning signals. API nodes will still be able to connect
+        # if the data nodes are not ready since publishNotReadyAddresses
+        # is set to True.
+        readinessProbe:
           exec:
             command:
             - /bin/bash
@@ -185,10 +214,10 @@ spec:
             - |
 {{ include "rondb.nodeId" $ | indent 14 }}
               ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
-          initialDelaySeconds: 10
-          failureThreshold: 5
-          periodSeconds: 15
-          timeoutSeconds: 20
+          initialDelaySeconds: 5
+          failureThreshold: 3
+          periodSeconds: 5
+          timeoutSeconds: 5
         volumeMounts:
         - name: rondb-ndbmtd-log
           mountPath: /srv/hops/mysql-cluster/log

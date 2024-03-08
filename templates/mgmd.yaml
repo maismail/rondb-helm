@@ -43,7 +43,33 @@ spec:
         command:
           - /bin/bash
           - -c
-          - ndb_mgmd --nodaemon --ndb-nodeid=65 --initial -f "$RONDB_DATA_DIR/config.ini" --configdir="$RONDB_DATA_DIR/log"
+          - |
+{{ include "entrypoint_mgmd" . | indent 12 }}
+        # MGMDs have publishNotReadyAddresses set to false.
+        # Adding a readiness probe will therefore have a direct
+        # effect on whether other services can reach the MGMd.
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - ndb_mgm -e show
+          initialDelaySeconds: 5
+          failureThreshold: 3
+          periodSeconds: 4
+          timeoutSeconds: 2
+        # Having a lively MGMd is crucial for other services' healthchecks.
+        # Restarting MGMds does not cost much and should be quick.
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - ndb_mgm -e show
+          initialDelaySeconds: 5
+          failureThreshold: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
         ports:
           - containerPort: 1186
         resources:
@@ -59,8 +85,9 @@ spec:
         - name: rondb-configs
           mountPath: /srv/hops/mysql-cluster/config.ini
           subPath: config.ini
+        # This is where the configuration database is stored
         - name: rondb-mgmd-data
-          mountPath: /srv/hops/mysql-cluster/data
+          mountPath: /srv/hops/mysql-cluster/mgmd
         - name: rondb-mgmd-log
           mountPath: /srv/hops/mysql-cluster/log
       volumes:
