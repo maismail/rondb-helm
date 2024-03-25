@@ -58,6 +58,7 @@ resources:
       diskColumnGiB: 2
       redoLogGiB: 2
       undoLogsGiB: 2
+      slackGiB: 1
 
 rondbConfig:
   NumCPUs: 4

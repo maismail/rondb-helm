@@ -56,21 +56,21 @@ spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.diskColumnGiB }}Gi
+            storage: {{ add (int $.Values.resources.requests.storage.diskColumnGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
     - metadata:
         name: rondb-ndbmtd-redo-logs
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.redoLogGiB }}Gi
+            storage: {{ add (int $.Values.resources.requests.storage.redoLogGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
     - metadata:
         name: rondb-ndbmtd-undo-logs
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ $.Values.resources.requests.storage.undoLogsGiB }}Gi
+            storage: {{ add (int $.Values.resources.requests.storage.undoLogsGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
