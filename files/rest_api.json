@@ -20,7 +20,17 @@
     },
     "Security": {
         "TLS": {
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+            "EnableTLS": true,
+{{ else }}
             "EnableTLS": false,
+{{ end }}
+{{- /*
+The prefix in the filenames come from the "locality" field in the HopsworksCert CRD.
+*/}}
+            "CertificateFile": "/etc/tls/mysql_certificate_bundle.pem",
+            "PrivateKeyFile": "/etc/tls/mysql_priv.pem",
+            "RootCACertFile": "/etc/tls/hops_root_ca.pem",
             "RequireAndVerifyClientCert": false
         },
         "APIKey": {

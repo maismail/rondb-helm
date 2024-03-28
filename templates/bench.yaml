@@ -49,7 +49,7 @@ spec:
           - name: MGMD_HOSTNAME
             value: mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local
           - name: MYSQLD_LOAD_BALANCER_HOSTNAME
-            value: mysqld.{{ .Release.Namespace }}.svc.cluster.local
+            value: {{ .Values.meta.mysqld.loadBalancerName }}.{{ .Release.Namespace }}.svc.cluster.local
           - name: MYSQL_BENCH_USER
             value: {{ .Values.benchmarking.mysqlUsername }}
           - name: MYSQL_BENCH_PASSWORD

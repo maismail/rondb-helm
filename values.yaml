@@ -1,3 +1,12 @@
+meta:
+  mysqld:
+    headlessClusterIpName: mysqld-cluster-ip
+    statefulSetName: mysqlds
+    loadBalancerName: mysqld
+  rdrs:
+    statefulSetName: rdrs
+    headlessClusterIpName: rdrs-cluster-ip
+
 isLocalCluster: false
 terminationGracePeriodSeconds: 60
 

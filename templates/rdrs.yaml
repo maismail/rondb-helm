@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: rdrs
+  name: {{ .Values.meta.rdrs.statefulSetName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: rdrs
+  serviceName: {{ .Values.meta.rdrs.headlessClusterIpName }}
   replicas: {{ .Values.clusterSize.minNumRdrs }}
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
@@ -74,6 +74,32 @@ spec:
           requests:
             cpu: {{ .Values.resources.requests.cpus.rdrs }}
             memory: {{ .Values.resources.requests.memory.rdrsMiB }}Mi
+        readinessProbe:
+          httpGet:
+            path: "0.1.0/ping"
+            port: 4406
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+            scheme: HTTPS
+{{ else }}
+            scheme: HTTP
+{{ end }}
+          initialDelaySeconds: 5
+          periodSeconds: 4
+          failureThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: "0.1.0/ping"
+            port: 4406
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+            scheme: HTTPS
+{{ else }}
+            scheme: HTTP
+{{ end }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 4
+          timeoutSeconds: 2
         env:
           - name: POD_NAME
             valueFrom:
@@ -84,10 +110,23 @@ spec:
         - name: rondb-configs
           mountPath: /srv/hops/mysql-cluster/rest_api.json
           subPath: rest_api.json
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+        - name: tls-certificates
+          mountPath: "/etc/tls"
+          readOnly: true
+{{- end }}
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
       volumes:
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+      # This will be created by the certs-operator via the HopsworksCert CRD
+      # The RDRS will therefore not start until the certificate is available
+      - name: tls-certificates
+        secret:
+          secretName: "rdrs-crypto-material"
+          optional: false
+{{- end }}
       - name: rondb-configs
         configMap:
           name: rondb-configs
@@ -95,8 +134,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  # Match the spec.serviceName
-  name: rdrs
+  name: {{ .Values.meta.rdrs.headlessClusterIpName }}
   namespace: {{ .Release.Namespace }}
 spec:
   # Headless service for individual DNS records for the pods
@@ -130,7 +168,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: rdrs
+    name: {{ .Values.meta.rdrs.statefulSetName }}
   minReplicas: {{ .Values.clusterSize.minNumRdrs }}
   maxReplicas: {{ .Values.clusterSize.maxNumRdrs }}
   metrics:
@@ -141,3 +179,17 @@ spec:
         type: Utilization
         averageUtilization: 70
 {{ end }}
+---
+{{ if and .Values.global .Values.global.security.tls.enabled }}
+apiVersion: certs.hopsworks.ai/v1alpha1
+kind: HopsworksCert
+metadata:
+  name: rdrs
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    certs.hopsworks.ai/owned-by: service-{{ .Values.meta.rdrs.headlessClusterIpName }}
+spec:
+  commonName: {{ .Values.meta.rdrs.headlessClusterIpName }}.{{ .Release.Namespace }}
+  locality: mysql
+{{ end }}
+---

@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mysqlds
+  name: {{ .Values.meta.mysqld.statefulSetName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: mysqld-cluster-ip
+  serviceName: {{ .Values.meta.mysqld.headlessClusterIpName }}
   replicas: {{ .Values.clusterSize.minNumMySQLServers }}
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
@@ -178,8 +178,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  # Match the spec.serviceName
-  name: mysqld-cluster-ip
+  name: {{ .Values.meta.mysqld.headlessClusterIpName }}
   namespace: {{ .Release.Namespace }}
   annotations:
     {{- range $k, $v := .Values.mysql.service.annotations }}
@@ -201,7 +200,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysqld
+  name: {{ .Values.meta.mysqld.loadBalancerName }}
   namespace: {{ .Release.Namespace }}
 spec:
   type: LoadBalancer
@@ -232,7 +231,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: mysqlds
+    name: {{ .Values.meta.mysqld.statefulSetName }}
   minReplicas: {{ .Values.clusterSize.minNumMySQLServers }}
   maxReplicas: {{ .Values.clusterSize.maxNumMySQLServers }}
   metrics:
