@@ -33,20 +33,36 @@ Kubernetes Jobs to add:
 helm lint
 helm template .
 
+RONDB_NAMESPACE=rondb-default
+kubectl create namespace $RONDB_NAMESPACE
+
 # Create required secrets (not part of Helmchart because visible with `helm get values`)
 kubectl create secret generic mysql-passwords \
-  --from-file=root=./mysql.password.root.dummy.txt \
-  --from-file=bench=./mysql.password.bench.dummy.txt
+  --namespace=$RONDB_NAMESPACE \
+  --from-literal=root=s0meH@rdPW \
+  --from-literal=bench=d1vikult2Gue$
+
+# No need to run this in conjunction with Hopsworks
+./setup_standalone_dependencies.sh $RONDB_NAMESPACE
 
 # Install and/or upgrade:
 helm upgrade -i my-rondb \
+    --namespace=$RONDB_NAMESPACE \
     --values ./values.minikube.small.yaml .
+```
 
-# Remove again
-kubectl delete secret mysql-passwords
-helm delete my-rondb
+## Teardown
 
-# Remove PVCs
+```bash
+helm delete --namespace=$RONDB_NAMESPACE my-rondb
+
+# Remove other related resources (non-namespaced objects not removed here e.g. PriorityClass)
+kubectl delete namespace $RONDB_NAMESPACE
+
+# Remove cert-manager
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.3/cert-manager.yaml
+
+# Remove PVCs manually
 kubectl delete pvc --all
 ```
 

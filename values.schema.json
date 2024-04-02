@@ -192,6 +192,60 @@
                 "RdrsSlotsPerNode"
             ]
         },
+        "tls": {
+            "type": "object",
+            "description": "Whether to use encrypted connections with RonDB APIs (MySQL & RDRS). It is possible to use both Ingress and end-to-end encryption, but not recommended. Ingress encryption is recommended for most use cases. End-to-end encryption is recommended for high-security use cases.",
+            "properties": {
+                "ingress": {
+                    "type": "object",
+                    "description": "Configuration of TLS on a Kubernetes nginx-Ingress instance",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Whether to use an Ingress or not - we only allow Ingress with TLS. The TLS Secrets will be placed onto the Ingress instance. Ingress is currently only supported with cert-manager (RonDB-standalone) and not the certs-operator (Hopsworks-solution)."
+                        },
+                        "secretName": {
+                            "type": "string",
+                            "description": "The name of the TLS Secret the cert-manager will create for the Ingress."
+                        },
+                        "certificateName": {
+                            "type": "string",
+                            "description": "The name of the TLS Certificate we give the cert-manager to create a TLS Secret for the Ingress."
+                        }
+                    }
+                },
+                "endToEnd": {
+                    "type": "object",
+                    "description": "Configuration of encrypted message up until the pods. This can be done additionally to Ingress encryption, but it is recommended to use either or. End-to-end encryption is the standard solution within Hopsworks.",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Whether to place encryption keys on actual API pods. This will not be possible with Let's Encrypt."
+                        },
+                        "mysqld": {
+                            "type": "object",
+                            "description": "MySQLd-specific end-to-end encryption information",
+                            "properties": {
+                                "secretName": {
+                                    "type": "string",
+                                    "description": "The name of the TLS Secret name to be created by the cert-manager for the MySQLd pods."
+                                }
+                            }
+                        },
+                        "rdrs": {
+                            "type": "object",
+                            "description": "RDRS-specific end-to-end encryption information",
+                            "properties": {
+                                "secretName": {
+                                    "type": "string",
+                                    "description": "The name of the TLS Secret name to be created by the cert-manager for the RDRS pods."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "benchmarking": {
             "type": "object",
             "description": "Whether, which and how to run a benchmarking job on the cluster",

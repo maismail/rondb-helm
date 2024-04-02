@@ -1,0 +1,73 @@
+{{ if and (not .Values.global) .Values.tls.ingress.enabled}}
+{{- /*
+Ingress only with TLS - this works hand-in-hand with the cert-manager.
+However, we're not using cert-manager in a global installation.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rondb-apis
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    ## This is read by cert-manager to create a TLS Secret:
+    cert-manager.io/certificate: {{ .Values.tls.ingress.certificateName }}
+
+    ## Alternatively, reference the Issuer directly.
+    ## Cert-manager will create a Certificate using this:
+    # cert-manager.io/issuer: "selfsigned-issuer"
+    # cert-manager.io/issuer: "letsencrypt-staging"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - rondb.com
+    # This may only be needed if annotating the Issuer directly.
+    secretName: {{ .Values.tls.ingress.secretName }}
+{{- /*
+Test this locally by:
+1. Placing `127.0.0.1 rondb.com` in your /etc/hosts file
+2. Connect to RDRS from host:
+    `curl -i --insecure https://rondb.com/0.1.0/ping`
+    This should reach the RDRS and return 200.
+3. Connect to MySQLd from host (needs MySQL client installed):
+    mysqladmin -h rondb.com \
+        --protocol=tcp \
+        --port=3306 \
+        --connect-timeout=3 \
+        --ssl-mode=REQUIRED \
+        --user=bench \
+        -p'd1vikult2Gue$' \
+        ping
+*/}}
+  rules:
+    # Ingress only supports 80/443 by default, so this should
+    # be directed towards the rdrs REST API
+    - host: rondb.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Values.meta.rdrs.clusterIpName }}
+              port:
+                number: 4406
+---
+# This will prompt the cert-manager to create a TLS Secret using the referenced
+# Issuer.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.tls.ingress.certificateName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  # The name of the TLS Secret that the cert-manager will create.
+  secretName: {{ .Values.tls.ingress.secretName }}
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  dnsNames:
+    - rondb.com
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+{{ end }}

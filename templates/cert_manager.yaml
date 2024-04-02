@@ -1,0 +1,11 @@
+{{ if not .Values.global }}
+# We don't use the cert-manager in a Hopsworks environment
+# Can also reference a base TLS Secret (air-gapped environment) or Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: {}
+{{ end }}

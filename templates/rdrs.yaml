@@ -78,7 +78,12 @@ spec:
           httpGet:
             path: "0.1.0/ping"
             port: 4406
-{{ if and .Values.global .Values.global.security.tls.enabled }}
+{{ if and (.Values.tls.endToEnd.enabled)
+    ( or
+        (not .Values.global)
+        (and .Values.global .Values.global.security.tls.enabled)
+    )
+}}
             scheme: HTTPS
 {{ else }}
             scheme: HTTP
@@ -91,7 +96,12 @@ spec:
           httpGet:
             path: "0.1.0/ping"
             port: 4406
-{{ if and .Values.global .Values.global.security.tls.enabled }}
+{{ if and (.Values.tls.endToEnd.enabled)
+    ( or
+        (not .Values.global)
+        (and .Values.global .Values.global.security.tls.enabled)
+    )
+}}
             scheme: HTTPS
 {{ else }}
             scheme: HTTP
@@ -110,7 +120,12 @@ spec:
         - name: rondb-configs
           mountPath: /srv/hops/mysql-cluster/rest_api.json
           subPath: rest_api.json
-{{ if and .Values.global .Values.global.security.tls.enabled }}
+{{ if and (.Values.tls.endToEnd.enabled)
+    ( or
+        (not .Values.global)
+        (and .Values.global .Values.global.security.tls.enabled)
+    )
+}}
         - name: tls-certificates
           mountPath: "/etc/tls"
           readOnly: true
@@ -119,13 +134,22 @@ spec:
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
       volumes:
-{{ if and .Values.global .Values.global.security.tls.enabled }}
+{{ if .Values.tls.endToEnd.enabled }}
+    {{ if not .Values.global }}
+      # This will be created by the cert-manager via the Certificate CRD
+      # The RDRS will therefore not start until the certificate is available
+      - name: tls-certificates
+        secret:
+          secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
+          optional: false    
+    {{ else if .Values.global.security.tls.enabled }}
       # This will be created by the certs-operator via the HopsworksCert CRD
       # The RDRS will therefore not start until the certificate is available
       - name: tls-certificates
         secret:
           secretName: "rdrs-crypto-material"
           optional: false
+    {{- end }}
 {{- end }}
       - name: rondb-configs
         configMap:
@@ -142,6 +166,26 @@ spec:
   # So we do not rely on the readiness probe to connect to the MGMd
   publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
+  selector:
+    rondbService: rdrs
+  ports:
+    - name: rest
+      protocol: TCP
+      port: 4406
+      targetPort: 4406
+    - name: grpc
+      protocol: TCP
+      port: 5406
+      targetPort: 5406
+---
+# This is for the Ingress controller to route traffic to the RDRS
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.meta.rdrs.clusterIpName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: ClusterIP
   selector:
     rondbService: rdrs
   ports:
@@ -180,7 +224,27 @@ spec:
         averageUtilization: 70
 {{ end }}
 ---
-{{ if and .Values.global .Values.global.security.tls.enabled }}
+{{ if .Values.tls.endToEnd.enabled }}
+    {{ if not .Values.global }}
+# Certificates will prompt the cert-manager to create a TLS Secret using the referenced
+# Issuer.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rdrs-cert
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  dnsNames:
+    - {{ .Values.meta.rdrs.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
+    {{ else if .Values.global.security.tls.enabled }}
+# HopsworksCert will prompt the certs-operator to create a Secret using the Hopsworks CA.
 apiVersion: certs.hopsworks.ai/v1alpha1
 kind: HopsworksCert
 metadata:
@@ -191,5 +255,6 @@ metadata:
 spec:
   commonName: {{ .Values.meta.rdrs.headlessClusterIpName }}.{{ .Release.Namespace }}
   locality: mysql
-{{ end }}
 ---
+    {{ end }}
+{{ end }}

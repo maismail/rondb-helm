@@ -6,6 +6,7 @@ meta:
   rdrs:
     statefulSetName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
+    clusterIpName: rdrs
 
 isLocalCluster: false
 terminationGracePeriodSeconds: 60
@@ -82,6 +83,18 @@ rondbConfig:
   EmptyApiSlots: 8
   MySQLdSlotsPerNode: 4
   RdrsSlotsPerNode: 2
+
+tls:
+  ingress:
+    enabled: true
+    certificateName: rondb-apis-cert
+    secretName: rondb-ingress-tls
+  endToEnd:
+    enabled: false
+    mysqld:
+      secretName: mysqld-tls
+    rdrs:
+      secretName: rdrs-tls
 
 benchmarking:
   enabled: false

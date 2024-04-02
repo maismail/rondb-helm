@@ -121,6 +121,11 @@ spec:
               - 'ping'
               - '-uroot'
               - '--protocol=tcp'
+{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+              - --ssl-mode=REQUIRED
+{{ else }}
+              - --ssl-mode=PREFERRED
+{{ end }}
           initialDelaySeconds: 5
           failureThreshold: 70
           periodSeconds: 1
@@ -131,6 +136,11 @@ spec:
               - 'mysqladmin'
               - 'ping'
               - '-uroot'
+{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+              - --ssl-mode=REQUIRED
+{{ else }}
+              - --ssl-mode=PREFERRED
+{{ end }}
           failureThreshold: 4
           periodSeconds: 5
           timeoutSeconds: 2
@@ -165,6 +175,11 @@ spec:
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
+{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+        - name: tls-certificates
+          mountPath: /etc/tls
+          readOnly: true
+{{- end }}
       volumes:
       - name: rondb-configs
         configMap:
@@ -174,6 +189,14 @@ spec:
         configMap:
           name: sql-init-script
 {{ end }}
+{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+      # This will be created by the cert-manager via the Certificate CRD
+      # The MySQLd will therefore not start until the certificate is available
+      - name: tls-certificates
+        secret:
+          secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
+          optional: false
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -197,13 +220,14 @@ spec:
       port: 3306
       targetPort: 3306
 ---
+# This is for the Ingress controller to route traffic to the MySQL server
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.meta.mysqld.loadBalancerName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     rondbService: mysqld
   ports:
@@ -241,4 +265,24 @@ spec:
       target:
         type: Utilization
         averageUtilization: 70
+{{ end }}
+---
+{{ if and (not .Values.global) .Values.tls.ingress.enabled }}
+# Certificates will prompt the cert-manager to create a TLS Secret using the referenced
+# Issuer.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mysql-cert
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  dnsNames:
+    - {{ .Values.meta.mysqld.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
 {{ end }}
