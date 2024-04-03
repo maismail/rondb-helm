@@ -30,10 +30,27 @@ spec:
     spec:
       {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Try to evenly distribute MySQLds between node groups for low latency
+          # Risk: Some node groups may receive more MySQLds than others
+          - weight: 90
+            preference:
+              matchExpressions:
+              - key: nodeGroup
+                operator: In
+                values:
+{{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
+                - {{ $nodeGroup | quote }}
+{{ end }}
+        # We want the placement of MySQLds be primarily based on the node groups.
+        # The anti-affinities are in place to ensure that the MySQLds are at least
+        # spread between node group *replicas*. The risk remains of MySQLds being
+        # unevenly distributed between node groups.
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           # Preferred on different node
-          - weight: 90
+          - weight: 80
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
@@ -42,8 +59,8 @@ spec:
                   values:
                   - mysqld
               topologyKey: kubernetes.io/hostname
-          # Preferred in different zone
-          - weight: 60
+          # Preferred in different zone for HA
+          - weight: 40
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
