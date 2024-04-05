@@ -1,9 +1,9 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema#",
     "properties": {
-        "isLocalCluster": {
+        "isMultiNodeCluster": {
             "type": "boolean",
-            "description": "Whether we are for example running on Minikube"
+            "description": "Whether we our Kubernetes cluster has multiple nodes"
         },
         "terminationGracePeriodSeconds": {
             "type": "integer",

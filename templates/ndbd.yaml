@@ -86,9 +86,10 @@ spec:
 {{- include "rondb.SecurityContext" $ | indent 6 }}
       affinity:
         podAntiAffinity:
-{{ if not $.Values.isLocalCluster }}
+{{ if not $.Values.isMultiNodeCluster }}
           # Must be on different nodes
           requiredDuringSchedulingIgnoredDuringExecution:
+          # Replicas of same node group must be on different nodes
           - labelSelector:
               matchExpressions:
                 - key: nodeGroup
@@ -96,9 +97,34 @@ spec:
                   values:
                   - {{ $nodeGroup | quote }}
             topologyKey: kubernetes.io/hostname
+          # Data nodes must be on different nodes than MGMds
+          # Example, we have:
+          # - a replication factor of 2
+          # - 1 node group for simplicity
+          # - one replica on the same node as the MGMd and this node goes down
+          # Then the data node on the other node would not be able to
+          # use the MGMd for arbitration and would then also go down.
+          - labelSelector:
+              matchExpressions:
+                - key: rondbService
+                  operator: In
+                  values:
+                  - mgmd
+            topologyKey: kubernetes.io/hostname
 {{ end }}
           # Can be in different zones
           preferredDuringSchedulingIgnoredDuringExecution:
+          # Placing a MGMd into a different AZ will not affect performance at all,
+          # but greatly benefit the availability of the cluster.
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: rondbService
+                  operator: In
+                  values:
+                  - mgmd
+              topologyKey: topology.kubernetes.io/zone
           - weight: 100
             podAffinityTerm:
               labelSelector:

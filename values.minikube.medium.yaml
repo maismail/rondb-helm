@@ -1,4 +1,4 @@
-isLocalCluster: true
+isMultiNodeCluster: true
 
 clusterSize:
   activeDataReplicas: 2
