@@ -44,7 +44,7 @@ spec:
           - /bin/bash
           - -c
           - |
-{{ include "entrypoint_mgmd" . | indent 12 }}
+{{ tpl (.Files.Get "files/entrypoints/mgmds.sh") . | indent 12 }}
         # MGMDs have publishNotReadyAddresses set to false.
         # Adding a readiness probe will therefore have a direct
         # effect on whether other services can reach the MGMd.

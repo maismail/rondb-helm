@@ -1,7 +1,6 @@
-# Calculate Node Id based on Pod name and Node Group
-
-{{ define "pre_entrypoint_ndbmtds" }}
 #!/bin/bash
+
+# Requires to calculate Node Id based on Pod name and Node Group
 
 # Equivalent to replication factor of pod
 POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
@@ -62,4 +61,3 @@ ndbmtd --nodaemon --ndb-nodeid=$NODE_ID $INITIAL_START --ndb-connectstring=$MGM_
 main_pid=$!
 wait $main_pid
 exit $?
-{{ end }}

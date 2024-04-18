@@ -95,7 +95,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ include "entrypoint_mysqld" . | indent 10 }}
+{{ tpl (.Files.Get "files/entrypoints/mysqlds.sh") . | indent 10 }}
         ports:
           - containerPort: 3306
         resources:

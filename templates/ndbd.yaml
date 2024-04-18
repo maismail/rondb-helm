@@ -191,7 +191,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ include "pre_entrypoint_ndbmtds" $ | indent 10 }}
+{{ tpl ($.Files.Get "files/entrypoints/ndbmtds.sh") $ | indent 10 }}
         ports:
           - containerPort: 11860
         resources:

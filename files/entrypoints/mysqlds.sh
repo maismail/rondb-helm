@@ -1,6 +1,6 @@
-# Note: This ignores the main.sh script; Not very important when running with volumes though
-{{ define "entrypoint_mysqld" }}
 #!/bin/bash
+
+# Note: This ignores the main.sh script; Not very important when running with volumes though
 
 set -e
 
@@ -79,5 +79,3 @@ fi
 echo "[K8s Entrypoint MySQLd] Ready for starting up MySQLd"
 echo "[K8s Entrypoint MySQLd] Running: $*"
 exec "$@"
-
-{{ end }}

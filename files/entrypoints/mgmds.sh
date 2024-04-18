@@ -1,4 +1,5 @@
-{{ define "entrypoint_mgmd" }}
+#!/bin/bash
+
 # The configuration database is a binary representation of the cluster's configuration.
 # It is essentially the config.ini including all changes that were applied via the
 # management client (ndb_mgm).
@@ -19,4 +20,3 @@ ndb_mgmd $INITIAL_ARG \
     --ndb-nodeid=65 \
     -f "$RONDB_DATA_DIR/config.ini" \
     --configdir="$CONFIG_DB_DIR"
-{{ end }}
