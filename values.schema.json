@@ -5,6 +5,11 @@
             "type": "boolean",
             "description": "Whether we our Kubernetes cluster has multiple nodes"
         },
+        "staticCpuManagerPolicy": {
+            "type": "boolean",
+            "description": "Whether the Kubernetes cluster has been configured with a static CPU manager policy. This is an optimization for RonDB data nodes. These have a scheduler which executes jobs within hundreds of microseconds (very quick). If the data nodes are pinned to CPUs, they can run CPU spnning to avoid context switching inbetween jobs.",
+            "default": false
+        },
         "terminationGracePeriodSeconds": {
             "type": "integer",
             "description": "TerminationGracePeriodSeconds for data nodes. Important for scaling down data node replicas.",
@@ -100,7 +105,7 @@
                 },
                 "requests": {
                     "type": "object",
-                    "description": "Kubernetes resource requests",
+                    "description": "Kubernetes resource requests; Note that data nodes will only apply limits, not requests",
                     "properties": {
                         "cpus": {
                             "$ref": "#/$defs/cpuResources"
@@ -128,6 +133,13 @@
                                     "default": 64,
                                     "minimum": 1,
                                     "maximum": 128
+                                },
+                                "slackGiB": {
+                                    "type": "integer",
+                                    "description": "Extra space for data node volumes. When RonDB allocates *exactly* the given amount of space, we can run into issues.",
+                                    "default": 1,
+                                    "minimum": 0,
+                                    "maximum": 2
                                 }
                             }
                         }
@@ -139,10 +151,6 @@
             "type": "object",
             "description": "Configurations for RonDB's config.ini. Memory configurations are in binary SI units (i.e. 1G = 1GiB = 1024MiB).",
             "properties": {
-                "NumCPUs": {
-                    "type": "integer",
-                    "minimum": 1
-                },
                 "MaxNoOfTables": {
                     "type": "integer"
                 },
@@ -180,7 +188,6 @@
                 }
             },
             "required": [
-                "NumCPUs",
                 "MaxNoOfTables",
                 "MaxNoOfAttributes",
                 "MaxNoOfTriggers",
@@ -297,6 +304,11 @@
                         },
                         "rows": {
                             "type": "integer"
+                        },
+                        "minimizeBandwidth": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Whether to use filters to minimize bandwidth usage. This can be useful in cloud environments where bandwidth is expensive."
                         }
                     }
                 }

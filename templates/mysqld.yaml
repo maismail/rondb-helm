@@ -78,13 +78,14 @@ spec:
         - /bin/bash
         - -c
         - |
-          until nslookup mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local; do
-            echo "Waiting for mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local to be resolvable..."
+          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+          until nslookup $MGMD_HOST; do
+            echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
 
           # Wait until data node is ready
-          until ./docker/rondb_standalone/healthcheck.sh mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local:1186 1; do
+          until ./docker/rondb_standalone/healthcheck.sh $MGMD_HOST:1186 1; do
             echo "Dependency healthcheck of ndbmtd failed. Retrying in a bit"
             sleep $(((RANDOM % 2)+2))
           done
@@ -241,7 +242,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.meta.mysqld.loadBalancerName }}
+  name: {{ .Values.meta.mysqld.serviceName }}
   namespace: {{ .Release.Namespace }}
 spec:
   type: ClusterIP

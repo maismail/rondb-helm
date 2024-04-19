@@ -24,14 +24,14 @@ spec:
             sleep $(((RANDOM % 2)+2))
           done
 
-          until nslookup $MYSQLD_LOAD_BALANCER_HOSTNAME; do
-            echo "Waiting for $MYSQLD_LOAD_BALANCER_HOSTNAME to be resolvable..."
+          until nslookup $MYSQLD_SERVICE_HOSTNAME; do
+            echo "Waiting for $MYSQLD_SERVICE_HOSTNAME to be resolvable..."
             sleep $(((RANDOM % 2)+2))
           done
 
           while true; do
             mysql \
-              -h $MYSQLD_LOAD_BALANCER_HOSTNAME \
+              -h $MYSQLD_SERVICE_HOSTNAME \
               --protocol=tcp \
               --port=3306 \
               --user=$MYSQL_BENCH_USER \
@@ -47,9 +47,9 @@ spec:
           done
         env:
           - name: MGMD_HOSTNAME
-            value: mgmds-0.mgmd.{{ .Release.Namespace }}.svc.cluster.local
-          - name: MYSQLD_LOAD_BALANCER_HOSTNAME
-            value: {{ .Values.meta.mysqld.loadBalancerName }}.{{ .Release.Namespace }}.svc.cluster.local
+            value: {{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+          - name: MYSQLD_SERVICE_HOSTNAME
+            value: {{ .Values.meta.mysqld.serviceName }}.{{ .Release.Namespace }}.svc.cluster.local
           - name: MYSQL_BENCH_USER
             value: {{ .Values.benchmarking.mysqlUsername }}
           - name: MYSQL_BENCH_PASSWORD
@@ -106,21 +106,18 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.benchs }}
             memory: {{ .Values.resources.requests.memory.benchsMiB }}Mi
         volumeMounts:
-        # Not important, but can help to debug benchmarks
+        # Using this so that we can fetch the results using another Pod
         - name: benchmarks
           mountPath: /home/mysql/benchmarks
-
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/sysbench/autobench-raw.conf
           subPath: autobench_sysbench.conf
-
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/dbt2_single/autobench-raw.conf
           subPath: autobench_dbt2.conf
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/dbt2_single/dbt2_run_1.conf
           subPath: dbt2_single_run.conf
-
         - name: benchmark-configs
           mountPath: /home/mysql/benchmarks/dbt2_multi/autobench-raw.conf
           subPath: autobench_dbt2.conf
@@ -130,7 +127,6 @@ spec:
     ################################################################
     # TODO: Figure out how volumes work when we run benchmarks in parallel
     #       Do they need to be accessed by multiple containers?
-    #       If we print the results, the volumes are not needed anymore?
     ################################################################
       volumes:
       - name: benchmarks
@@ -151,6 +147,32 @@ spec:
   resources:
     requests:
       storage: 20Mi
+---
+# Use this container to fetch results from the benchmark container
+# Cannot be a sidecar since the job would not finish then
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fetch-bench-results
+  namespace: {{ .Release.Namespace }}
+spec:
+{{- include "rondb.SecurityContext" . | indent 2 }}
+  containers:
+  - name: idle-results-fetcher
+    image: busybox
+    command: ["/bin/sh", "-c", "while [ ! -f /var/run/done ]; do sleep 5; done"]
+    resources:
+      limits:
+        cpu: 0.1
+        memory: 15Mi
+    volumeMounts:
+    - name: benchmarks
+      mountPath: /home/mysql/benchmarks
+  volumes:
+  - name: benchmarks
+    persistentVolumeClaim:
+      claimName: benchmarks-claim
+  restartPolicy: Never
 ---
 apiVersion: v1
 kind: ConfigMap

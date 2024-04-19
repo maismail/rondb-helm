@@ -56,6 +56,15 @@ else
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ exists - we have started the ndbmtds here before. No initial start is needed."
 fi
 
+# Checking whether CPU manager policy is set to "static"
+if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+    echo "[K8s Entrypoint ndbmtd] cgroup v2 detected"
+    echo "[K8s Entrypoint ndbmtd] Available CPUs: $(cat /sys/fs/cgroup/cpuset.cpus.effective)"
+else
+    echo "[K8s Entrypoint ndbmtd] cgroup v1 detected"
+    echo "[K8s Entrypoint ndbmtd] Available CPUs: $(cat /sys/fs/cgroup/cpuset/cpuset.cpus)"
+fi
+
 # Start ndbmtd in the background and log to stdout
 ndbmtd --nodaemon --ndb-nodeid=$NODE_ID $INITIAL_START --ndb-connectstring=$MGM_CONNECTION_STRING &
 main_pid=$!

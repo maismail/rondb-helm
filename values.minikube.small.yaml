@@ -13,22 +13,20 @@ resources:
     cpus:
       mgmds: 0.2
       ndbmtds: 2
-      mysqlds: 2
+      mysqlds: 3
       rdrs: 2
       benchs: 2
     memory:
-      ndbmtdsMiB: 3500
+      ndbmtdsMiB: 3300
       rdrsMiB: 500
       benchsMiB: 500
   requests:
     cpus:
       mgmds: 0.2
-      ndbmtds: 1
       mysqlds: 1
       rdrs: 1
       benchs: 1
     memory:
-      ndbmtdsMiB: 3300
       rdrsMiB: 100
       benchsMiB: 100
     storage:
@@ -37,7 +35,6 @@ resources:
       undoLogsGiB: 4
 
 rondbConfig:
-  NumCPUs: 4
   MaxNoOfTables: 384
   MaxNoOfAttributes: 8000
   MaxNoOfTriggers: 4000

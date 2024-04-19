@@ -1,13 +1,17 @@
 meta:
+  mgmd:
+    headlessClusterIpName: mgmd-cluster-ip
+    statefulSetName: mgmds
   mysqld:
+    serviceName: mysqld
     headlessClusterIpName: mysqld-cluster-ip
     statefulSetName: mysqlds
-    loadBalancerName: mysqld
   rdrs:
-    statefulSetName: rdrs
+    serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
-    clusterIpName: rdrs
+    statefulSetName: rdrs
 
+staticCpuManagerPolicy: false
 isMultiNodeCluster: false
 terminationGracePeriodSeconds: 60
 
@@ -48,19 +52,17 @@ resources:
       rdrs: 2
       benchs: 2
     memory:
-      ndbmtdsMiB: 3800
+      ndbmtdsMiB: 3500
       rdrsMiB: 500
       mysqldMiB: 1400
       benchsMiB: 500
   requests:
     cpus:
       mgmds: 0.2
-      ndbmtds: 1
       mysqlds: 1
       rdrs: 1
       benchs: 1
     memory:
-      ndbmtdsMiB: 3500
       rdrsMiB: 100
       mysqldMiB: 650
       benchsMiB: 100
@@ -71,7 +73,6 @@ resources:
       slackGiB: 1
 
 rondbConfig:
-  NumCPUs: 4
   MaxNoOfTables: 384
   MaxNoOfAttributes: 8000
   MaxNoOfTriggers: 4000
@@ -119,3 +120,4 @@ benchmarking:
   sysbench:
     threadCountsToRun: "1;2;4;8;12;16;24;32;64"
     rows: 100000
+    minimizeBandwidth: false

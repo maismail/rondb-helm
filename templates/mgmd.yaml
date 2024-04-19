@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mgmds
+  name: {{ .Values.meta.mgmd.statefulSetName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: mgmd
+  serviceName: {{ .Values.meta.mgmd.headlessClusterIpName }}
   replicas: 1
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
@@ -98,8 +98,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  # Match the spec.serviceName
-  name: mgmd
+  name: {{ .Values.meta.mgmd.headlessClusterIpName }}
   namespace: {{ .Release.Namespace }}
 spec:
   # Headless service for individual DNS records for the pods

@@ -58,6 +58,9 @@ NDB_MGMD_NODES={{ .mgmdHosts | quote }}
 SYSBENCH_TEST="oltp_rw"
 THREAD_COUNTS_TO_RUN={{ .threadCountsToRun | quote }}
 MAX_TIME="30"
+{{- if .minimizeBandwidth }}
+SB_USE_FILTER="yes" 
+{{- end }}
 SYSBENCH_ROWS={{ .rows | quote }}
 SYSBENCH_INSTANCES={{ .numMySQLds | quote }}
 

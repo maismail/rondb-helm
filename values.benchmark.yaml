@@ -1,0 +1,40 @@
+# Optimal cluster size for sysbench benchmarking
+
+# Setting this to true will boost performance, but the CPU Manager Policy
+# must be enabled in the cluster, otherwise the data nodes will fail
+staticCpuManagerPolicy: false
+
+clusterSize:
+  activeDataReplicas: 1
+  numNodeGroups: 1
+  minNumMySQLServers: 3
+  maxNumMySQLServers: 3
+  minNumRdrs: 0
+  maxNumRdrs: 0
+
+# Better for performance
+tls:
+  ingress:
+    enabled: false
+  endToEnd:
+    enabled: false
+
+benchmarking:
+  enabled: true
+  dbt2:
+    numWarehouses: 4
+    runSingle: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      1                    1               1
+      1                    2               1
+      1                    4               1
+      1                    4               2
+    runMulti: |
+      # NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS
+      2                    1               1
+      2                    2               1
+      2                    2               2
+  sysbench:
+    threadCountsToRun: "1;2;4;8;12;16;24;32;64;128;256"
+    rows: 100000
+    minimizeBandwidth: false
