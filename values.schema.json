@@ -16,23 +16,22 @@
             "default": 60,
             "minimum": 30
         },
-        "image": {
-            "type": "object",
-            "description": "RonDB container image",
-            "properties": {
-                "registry": {
-                    "type": "string",
-                    "description": "Where image is hosted; includes repo if available. Omit for local registry (E.g. use `minikube image load rondb-standalone:latest`)"
-                },
-                "tag": {
-                    "type": "string",
-                    "description": "Tag of RonDB image"
-                }
+    "images": {
+        "type": "object",
+        "description": "Information for Docker images used in the cluster",
+        "properties": {
+            "rondb": {
+                "$ref": "#/$defs/image"
             },
-            "required": [
-                "tag"
-            ]
+            "toolbox": {
+                "$ref": "#/$defs/image"
+            }
         },
+        "required": [
+            "rondb",
+            "toolbox"
+        ]
+    },
         "mysql": {
             "type": "object",
             "description": "How to initialize MySQL",
@@ -321,7 +320,7 @@
         }
     },
     "required": [
-        "image",
+        "images",
         "clusterSize",
         "resources",
         "rondbConfig"
@@ -378,6 +377,24 @@
                 },
                 "benchsMiB": {
                     "type": "number"
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "description": "Docker image",
+            "properties": {
+                "registry": {
+                    "type": "string"
+                },
+                "repository": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
                 }
             }
         }

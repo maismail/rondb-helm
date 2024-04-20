@@ -138,7 +138,7 @@ spec:
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       initContainers:
       - name: mgmd-dependency-check
-        image: {{ include "image_registry" $ }}rondb-standalone:{{ $.Values.image.tag }}
+        image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
         # Setting resources in order to be in QoS class Guaranteed
         resources:
           limits:
@@ -194,7 +194,7 @@ spec:
           done
       containers:
       - name: ndbmtd
-        image: {{ include "image_registry" $ }}rondb-standalone:{{ $.Values.image.tag }}
+        image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
         command:
         - /bin/bash
         - -c

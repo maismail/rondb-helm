@@ -17,7 +17,7 @@ BENCHMARK_TO_RUN="dbt2"
 SERVER_HOST={{ .mySQLdHosts | quote }}
 MYSQL_USER={{ .mysqlUsername | quote }}
 MYSQL_PASSWORD=
-NDB_MULTI_CONNECTION={{ .MySQLdSlotsPerNode | quote }}
+NDB_MULTI_CONNECTION={{ .mySQLdSlotsPerNode | quote }}
 
 # PARAMETER                 EXAMPLE                         DESCRIPTION
 #################################################################################################

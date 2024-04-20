@@ -42,7 +42,7 @@ spec:
               topologyKey: topology.kubernetes.io/zone
       initContainers:
       - name: datanode-dependency-check
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
         - /bin/bash
         - -c
@@ -60,7 +60,7 @@ spec:
           done
       containers:
       - name: rdrs
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
           - /bin/bash
           - -c

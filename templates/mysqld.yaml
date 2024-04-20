@@ -72,7 +72,7 @@ spec:
 {{- include "rondb.SecurityContext" . | indent 6 }}
       initContainers:
       - name: datanode-dependency-check
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
         # Make sure data node has connected to MGMd
         - /bin/bash
@@ -91,7 +91,7 @@ spec:
           done
       containers:
       - name: mysqld
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
         - /bin/bash
         - -c

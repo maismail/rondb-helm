@@ -10,16 +10,21 @@ meta:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
     statefulSetName: rdrs
-
 staticCpuManagerPolicy: false
 isMultiNodeCluster: false
 terminationGracePeriodSeconds: 60
-
 # TODO: Consider using Chart.appVersion for tag instead
-image:
-  registry: docker.io
-  tag: 22.10.1-0.4
-
+images:
+  rondb:
+    registry: docker.io
+    repository: hopsworks
+    name: rondb-standalone
+    tag: 22.10.1-0.4
+  toolbox:
+    registry: docker.io
+    repository: ""
+    name: alpine
+    tag: latest
 mysql:
   sqlInitContent: |
     CREATE TABLE IF NOT EXISTS ycsb.usertable (
@@ -29,12 +34,10 @@ mysql:
   rootCredentialsSecret:
     name: "mysql-passwords"
     key: "root"
-
   service:
     annotations:
       consul.hashicorp.com/service-name: mysql
       consul.hashicorp.com/service-tags: onlinefs
-
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1
@@ -42,7 +45,6 @@ clusterSize:
   maxNumMySQLServers: 5
   minNumRdrs: 1
   maxNumRdrs: 2
-
 resources:
   limits:
     cpus:
@@ -71,7 +73,6 @@ resources:
       redoLogGiB: 2
       undoLogsGiB: 2
       slackGiB: 1
-
 rondbConfig:
   MaxNoOfTables: 384
   MaxNoOfAttributes: 8000
@@ -80,11 +81,9 @@ rondbConfig:
   SharedGlobalMemory: 300M
   ReservedConcurrentOperations: 50000
   MaxNoOfConcurrentOperations: 200000
-
   EmptyApiSlots: 8
   MySQLdSlotsPerNode: 4
   RdrsSlotsPerNode: 2
-
 tls:
   ingress:
     enabled: true
@@ -96,7 +95,6 @@ tls:
       secretName: mysqld-tls
     rdrs:
       secretName: rdrs-tls
-
 benchmarking:
   enabled: false
   mysqlUsername: "bench"

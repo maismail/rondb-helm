@@ -13,7 +13,7 @@ spec:
       restartPolicy: OnFailure
       initContainers:
       - name: mysqld-dependency-check
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
         # Make sure data node has connected to MGMd
         - /bin/bash
@@ -58,7 +58,7 @@ spec:
                 {{- toYaml .Values.benchmarking.credentialsSecret | nindent 16 }}
       containers:
       - name: bench
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
         # - Alternatively: 'sleep infinity' for manual tests
         # - If we needed to change hostname & activate API slots, we could
@@ -159,7 +159,7 @@ spec:
 {{- include "rondb.SecurityContext" . | indent 2 }}
   containers:
   - name: idle-results-fetcher
-    image: busybox
+    image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
     command: ["/bin/sh", "-c", "while [ ! -f /var/run/done ]; do sleep 5; done"]
     resources:
       limits:

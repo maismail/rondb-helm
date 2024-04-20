@@ -39,7 +39,7 @@ spec:
 {{- include "rondb.SecurityContext" $ | indent 6 }}
       containers:
       - name: mgmd
-        image: {{ include "image_registry" . }}rondb-standalone:{{ .Values.image.tag }}
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
           - /bin/bash
           - -c

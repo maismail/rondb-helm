@@ -1,10 +1,13 @@
-# Also supports nothing defined at all (local registry)
-{{- define "image_registry" -}}
-{{- if and $.Values.global $.Values.global.imageRegistry -}}
-{{- $.Values.global.imageRegistry -}}/hopsworks/
-{{- else if $.Values.image.registry -}}
-{{- $.Values.image.registry -}}/hopsworks/
+# Could be that there is no repository (e.g. docker.io/alpine)
+{{- define "image_repository" -}}
+{{- if or (not .image.repository) (eq .image.repository "") -}}
+{{- else -}}
+{{ .image.repository }}/
 {{- end -}}
+{{- end -}}
+
+{{- define "image_address" -}}
+{{ .image.registry }}/{{ include "image_repository" (dict "image" .image ) }}{{ .image.name }}:{{ .image.tag }}
 {{- end -}}
 
 {{- define "rondb.nodeId" -}}
