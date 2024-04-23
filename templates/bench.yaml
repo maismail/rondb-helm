@@ -47,7 +47,7 @@ spec:
           done
         env:
           - name: MGMD_HOSTNAME
-            value: {{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+            value: {{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
           - name: MYSQLD_SERVICE_HOSTNAME
             value: {{ .Values.meta.mysqld.serviceName }}.{{ .Release.Namespace }}.svc.cluster.local
           - name: MYSQL_BENCH_USER

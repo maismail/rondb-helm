@@ -16,22 +16,111 @@
             "default": 60,
             "minimum": 30
         },
-    "images": {
-        "type": "object",
-        "description": "Information for Docker images used in the cluster",
-        "properties": {
-            "rondb": {
-                "$ref": "#/$defs/image"
+        "meta": {
+            "type": "object",
+            "properties": {
+                "mgmd": {
+                    "type": "object",
+                    "properties": {
+                        "statefulSetName": {
+                            "type": "string"
+                        },
+                        "headlessClusterIp": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "annotations": {
+                                    "type": "object"
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "statefulSetName",
+                        "headlessClusterIp"
+                    ]
+                },
+                "mysqld": {
+                    "type": "object",
+                    "properties": {
+                        "serviceName": {
+                            "type": "string"
+                        },
+                        "statefulSetName": {
+                            "type": "string"
+                        },
+                        "headlessClusterIp": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "type": "integer"
+                                },
+                                "annotations": {
+                                    "type": "object"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "port"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "serviceName",
+                        "statefulSetName",
+                        "headlessClusterIp"
+                    ]
+                },
+                "rdrs": {
+                    "type": "object",
+                    "properties": {
+                        "serviceName": {
+                            "type": "string"
+                        },
+                        "statefulSetName": {
+                            "type": "string"
+                        },
+                        "headlessClusterIpName": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "serviceName",
+                        "statefulSetName",
+                        "headlessClusterIpName"
+                    ]
+                }
             },
-            "toolbox": {
-                "$ref": "#/$defs/image"
-            }
+            "required": [
+                "mgmd",
+                "mysqld",
+                "rdrs"
+            ]
         },
-        "required": [
-            "rondb",
-            "toolbox"
-        ]
-    },
+        "images": {
+            "type": "object",
+            "description": "Information for Docker images used in the cluster",
+            "properties": {
+                "rondb": {
+                    "$ref": "#/$defs/image"
+                },
+                "toolbox": {
+                    "$ref": "#/$defs/image"
+                }
+            },
+            "required": [
+                "rondb",
+                "toolbox"
+            ]
+        },
         "mysql": {
             "type": "object",
             "description": "How to initialize MySQL",
@@ -385,7 +474,8 @@
             "description": "Docker image",
             "properties": {
                 "registry": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Where image is hosted. Omit for local registry (E.g. use `minikube image load rondb-standalone:latest`)"
                 },
                 "repository": {
                     "type": "string"

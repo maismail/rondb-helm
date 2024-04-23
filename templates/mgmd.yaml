@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.meta.mgmd.statefulSetName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: {{ .Values.meta.mgmd.headlessClusterIpName }}
+  serviceName: {{ .Values.meta.mgmd.headlessClusterIp.name }}
   replicas: 1
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
@@ -98,8 +98,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.meta.mgmd.headlessClusterIpName }}
+  name: {{ .Values.meta.mgmd.headlessClusterIp.name }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- range $k, $v := .Values.meta.mgmd.headlessClusterIp.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None

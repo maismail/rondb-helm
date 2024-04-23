@@ -47,7 +47,7 @@ spec:
         - /bin/bash
         - -c
         - |
-          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
           until nslookup $MGMD_HOST; do
             echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))

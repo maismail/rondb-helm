@@ -149,7 +149,7 @@ spec:
             memory: 200Mi
         env:
         - name: MGMD_HOST
-          value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIpName }}.{{ $.Release.Namespace }}.svc.cluster.local
+          value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local
         - name: NODE_GROUP
           value: {{ $nodeGroup | quote }}
         - name: POD_NAME
@@ -210,9 +210,9 @@ spec:
             memory: {{ $.Values.resources.limits.memory.ndbmtdsMiB }}Mi
         env:
           - name: MGM_CONNECTION_STRING
-            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIpName }}.{{ $.Release.Namespace }}.svc.cluster.local:1186
+            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local:1186
           - name: MGMD_HOST
-            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIpName }}.{{ $.Release.Namespace }}.svc.cluster.local
+            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local
           - name: NODE_GROUP
             value: {{ $nodeGroup | quote }}
           - name: POD_NAME

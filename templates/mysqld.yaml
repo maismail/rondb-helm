@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.meta.mysqld.statefulSetName }}
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: {{ .Values.meta.mysqld.headlessClusterIpName }}
+  serviceName: {{ .Values.meta.mysqld.headlessClusterIp.name }}
   replicas: {{ .Values.clusterSize.minNumMySQLServers }}
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
@@ -78,7 +78,7 @@ spec:
         - /bin/bash
         - -c
         - |
-          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
           until nslookup $MGMD_HOST; do
             echo "Waiting for $MGMD_HOST to be resolvable..."
             sleep $(((RANDOM % 2)+2))
@@ -219,10 +219,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.meta.mysqld.headlessClusterIpName }}
+  name: {{ .Values.meta.mysqld.headlessClusterIp.name }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    {{- range $k, $v := .Values.mysql.service.annotations }}
+    {{- range $k, $v := .Values.meta.mysqld.headlessClusterIp.annotations }}
     {{ $k }}: {{ $v | quote }}
     {{- end }}
 spec:
@@ -235,7 +235,7 @@ spec:
     rondbService: mysqld
   ports:
     - protocol: TCP
-      port: 3306
+      port: {{ .Values.meta.mysqld.headlessClusterIp.port }}
       targetPort: 3306
 ---
 # This is for the Ingress controller to route traffic to the MySQL server
@@ -298,7 +298,7 @@ spec:
   duration: 2160h # 90d
   renewBefore: 360h # 15d
   dnsNames:
-    - {{ .Values.meta.mysqld.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.meta.mysqld.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     name: selfsigned-issuer
     kind: Issuer

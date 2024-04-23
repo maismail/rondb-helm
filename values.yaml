@@ -1,11 +1,20 @@
 meta:
   mgmd:
-    headlessClusterIpName: mgmd-cluster-ip
     statefulSetName: mgmds
+    headlessClusterIp:
+      name: mgmd-cluster-ip
+      annotations:
+        consul.hashicorp.com/service-name: mgmd
+        consul.hashicorp.com/service-tags: 'onlinefs,hopsfs'
   mysqld:
     serviceName: mysqld
-    headlessClusterIpName: mysqld-cluster-ip
     statefulSetName: mysqlds
+    headlessClusterIp:
+      name: mysqld-cluster-ip
+      port: 3306
+      annotations:
+        consul.hashicorp.com/service-name: mysqld
+        consul.hashicorp.com/service-tags: 'onlinefs,airflow'
   rdrs:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
@@ -34,10 +43,6 @@ mysql:
   rootCredentialsSecret:
     name: "mysql-passwords"
     key: "root"
-  service:
-    annotations:
-      consul.hashicorp.com/service-name: mysql
-      consul.hashicorp.com/service-tags: onlinefs
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1
