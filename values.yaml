@@ -5,7 +5,6 @@ meta:
       name: mgmd-cluster-ip
       annotations:
         consul.hashicorp.com/service-name: mgmd
-        consul.hashicorp.com/service-tags: 'onlinefs,hopsfs'
   mysqld:
     serviceName: mysqld
     statefulSetName: mysqlds
@@ -13,8 +12,8 @@ meta:
       name: mysqld-cluster-ip
       port: 3306
       annotations:
-        consul.hashicorp.com/service-name: mysqld
-        consul.hashicorp.com/service-tags: 'onlinefs,airflow'
+        consul.hashicorp.com/service-name: mysql
+        consul.hashicorp.com/service-tags: 'onlinefs'
   rdrs:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
