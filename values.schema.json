@@ -205,6 +205,11 @@
                             "type": "object",
                             "description": "Volume sizes",
                             "properties": {
+                                "dedicatedDiskColumnVolume":{
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Whether to use a dedicated volume only for on disk columns or not."
+                                },
                                 "diskColumnGiB": {
                                     "type": "integer",
                                     "default": 64,
@@ -228,6 +233,10 @@
                                     "default": 1,
                                     "minimum": 0,
                                     "maximum": 2
+                                },
+                                "logGib": {
+                                    "type": "integer",
+                                    "default": 2
                                 }
                             }
                         }

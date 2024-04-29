@@ -73,10 +73,12 @@ resources:
       mysqldMiB: 650
       benchsMiB: 100
     storage:
+      dedicatedDiskColumnVolume: false
       diskColumnGiB: 2
       redoLogGiB: 2
       undoLogsGiB: 2
       slackGiB: 1
+      logGib: 2
 rondbConfig:
   MaxNoOfTables: 384
   MaxNoOfAttributes: 8000

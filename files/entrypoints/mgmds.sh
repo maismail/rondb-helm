@@ -11,6 +11,16 @@ NUM_FOUND=$(echo "$FOUND_FILES" | grep -c .)
 if [ "$NUM_FOUND" -lt 1 ]; then
     echo "No configuration database available. Doing an initial start."
     INITIAL_ARG="--initial"
+
+    BASE_DIR=/srv/hops/mysql-cluster
+    RONDB_VOLUME=${BASE_DIR}/rondb
+    for dir in log mgmd
+    do
+        rm -rf ${BASE_DIR}/${dir}
+        mkdir ${RONDB_VOLUME}/${dir}
+        ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
+    done
+
 else
     echo "A configuration database was found. Not running an initial start."
 fi

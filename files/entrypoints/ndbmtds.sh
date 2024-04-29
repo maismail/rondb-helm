@@ -52,6 +52,21 @@ if [ ! -f "$FIRST_FILE_READ" ]
 then
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ does not exist - we'll do an initial start here"
     INITIAL_START="--initial"
+
+    BASE_DIR=/srv/hops/mysql-cluster
+    RONDB_VOLUME=${BASE_DIR}/rondb
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+    RONDB_DIRS=(log ndb_data ndb_undo_files)
+{{ else }}
+    RONDB_DIRS=(log ndb_data ndb_data_files ndb_undo_files)
+{{ end }}
+    for dir in ${RONDB_DIRS[@]}
+    do
+        rm -rf ${BASE_DIR}/${dir}
+        mkdir ${RONDB_VOLUME}/${dir}
+        ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
+    done
+    
 else
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ exists - we have started the ndbmtds here before. No initial start is needed."
 fi

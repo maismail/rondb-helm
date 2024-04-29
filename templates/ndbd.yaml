@@ -44,33 +44,23 @@ spec:
   # even if it is rescheduled to a different node.
   volumeClaimTemplates:
     - metadata:
-        name: rondb-ndbmtd-log
+        name: rondb-ndbmtd
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: 2Gi
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+            storage: {{ add $.Values.resources.requests.storage.redoLogGiB $.Values.resources.requests.storage.undoLogsGiB $.Values.resources.requests.storage.slackGiB $.Values.resources.requests.storage.logGib }}Gi
     - metadata:
-        name: rondb-ndbmtd-disk-columns
+        name: rondb-ndbmtd-dc
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ add (int $.Values.resources.requests.storage.diskColumnGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
-    - metadata:
-        name: rondb-ndbmtd-redo-logs
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: {{ add (int $.Values.resources.requests.storage.redoLogGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
-    - metadata:
-        name: rondb-ndbmtd-undo-logs
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: {{ add (int $.Values.resources.requests.storage.undoLogsGiB) (int $.Values.resources.requests.storage.slackGiB) }}Gi
+            storage: {{ add $.Values.resources.requests.storage.diskColumnGiB  $.Values.resources.requests.storage.slackGiB }}Gi
+{{ else }}
+            storage: {{ add $.Values.resources.requests.storage.diskColumnGiB $.Values.resources.requests.storage.redoLogGiB $.Values.resources.requests.storage.undoLogsGiB $.Values.resources.requests.storage.slackGiB $.Values.resources.requests.storage.logGib }}Gi
+{{ end }}
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -275,14 +265,12 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 5
         volumeMounts:
-        - name: rondb-ndbmtd-log
-          mountPath: /srv/hops/mysql-cluster/log
-        - name: rondb-ndbmtd-disk-columns
+        - name: rondb-ndbmtd
+          mountPath: /srv/hops/mysql-cluster/rondb
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+        - name: rondb-ndbmtd-dc
           mountPath: /srv/hops/mysql-cluster/ndb_data_files
-        - name: rondb-ndbmtd-redo-logs
-          mountPath: /srv/hops/mysql-cluster/ndb_data
-        - name: rondb-ndbmtd-undo-logs
-          mountPath: /srv/hops/mysql-cluster/ndb_undo_files
+{{ end }}
 ---
 apiVersion: v1
 kind: Service

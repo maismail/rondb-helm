@@ -12,19 +12,12 @@ spec:
       rondbService: mgmd
   volumeClaimTemplates:
     - metadata:
-        name: rondb-mgmd-data
+        name: rondb-mgmd
       spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: 10Mi
-    - metadata:
-        name: rondb-mgmd-log
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: 20Mi
+            storage: 30Mi
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -85,11 +78,8 @@ spec:
         - name: rondb-configs
           mountPath: /srv/hops/mysql-cluster/config.ini
           subPath: config.ini
-        # This is where the configuration database is stored
-        - name: rondb-mgmd-data
-          mountPath: /srv/hops/mysql-cluster/mgmd
-        - name: rondb-mgmd-log
-          mountPath: /srv/hops/mysql-cluster/log
+        - name: rondb-mgmd
+          mountPath: /srv/hops/mysql-cluster/rondb
       volumes:
       - name: rondb-configs
         configMap:
