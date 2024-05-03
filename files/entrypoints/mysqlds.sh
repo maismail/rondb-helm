@@ -56,24 +56,9 @@ source ./docker/rondb_standalone/entrypoints/mysqld_configure.sh ""
 
 if [[ $POD_NAME != *"-0" ]]; then
     echo "[K8s Entrypoint MySQLd] Not initializing MySQL databases because this is not the first MySQLd pod"
-    MYSQL_INITIALIZE_DB=
 else
-    if [ ! -f "$MYSQL_DATABASES_INIT_FILE" ]; then
-        echo "[K8s Entrypoint MySQLd] File $MYSQL_DATABASES_INIT_FILE does not exist; we're initializing MySQL databases"
-        MYSQL_INITIALIZE_DB=1
-    else
-        echo "[K8s Entrypoint MySQLd] File $MYSQL_DATABASES_INIT_FILE already exist; we're not initializing MySQL databases"
-        MYSQL_INITIALIZE_DB=
-    fi
-fi
-
-if [ ! -z "$MYSQL_INITIALIZE_DB" ]; then
+    echo "[K8s Entrypoint MySQLd] initializing MySQL databases"
     source ./docker/rondb_standalone/entrypoints/mysqld_init_db.sh "$@"
-
-    echo "[K8s Entrypoint MySQLd] Creating file $MYSQL_DATABASES_INIT_FILE"
-    touch $MYSQL_DATABASES_INIT_FILE
-else
-    echo "[K8s Entrypoint MySQLd] Not initializing MySQL databases"
 fi
 
 echo "[K8s Entrypoint MySQLd] Ready for starting up MySQLd"

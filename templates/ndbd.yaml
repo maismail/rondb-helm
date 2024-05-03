@@ -47,14 +47,16 @@ spec:
         name: rondb-ndbmtd
       spec:
         accessModes: [ReadWriteOnce]
+{{ include "rondb.storageClassName" $ | indent 8 }}
         resources:
           requests:
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
             storage: {{ add $.Values.resources.requests.storage.redoLogGiB $.Values.resources.requests.storage.undoLogsGiB $.Values.resources.requests.storage.slackGiB $.Values.resources.requests.storage.logGib }}Gi
     - metadata:
         name: rondb-ndbmtd-dc
       spec:
         accessModes: [ReadWriteOnce]
+{{ include "rondb.diskColumn.storageClassName" $ | indent 8 }}
         resources:
           requests:
             storage: {{ add $.Values.resources.requests.storage.diskColumnGiB  $.Values.resources.requests.storage.slackGiB }}Gi
@@ -267,7 +269,7 @@ spec:
         volumeMounts:
         - name: rondb-ndbmtd
           mountPath: /srv/hops/mysql-cluster/rondb
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
         - name: rondb-ndbmtd-dc
           mountPath: /srv/hops/mysql-cluster/ndb_data_files
 {{ end }}

@@ -22,12 +22,31 @@ Create the main Hopsworks user
 */}}
 {{- define "rondb.sqlInitContent" -}}
 {{- if and .Values.global .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
-{{ .Values.mysql.sqlInitContent }}
+DELIMITER //
+CREATE DATABASE IF NOT EXISTS dbs_have_initialized;
+USE dbs_have_initialized;
+CREATE PROCEDURE IF NOT EXISTS initDBS()
+BEGIN
 
-CREATE USER IF NOT EXISTS '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global.mysql.password }}';
-GRANT ALL PRIVILEGES ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' WITH GRANT OPTION;
-GRANT NDB_STORED_USER ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}';
-FLUSH PRIVILEGES;
+  DECLARE table_count INT;
+
+  SELECT COUNT(*) INTO table_count FROM information_schema.tables WHERE table_schema = 'dbs_have_initialized' and table_name='initialized_flag';
+
+  IF table_count = 0 THEN
+
+{{ .Values.mysql.sqlInitContent | indent 4}}
+
+    CREATE USER IF NOT EXISTS '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global.mysql.password }}';
+    GRANT ALL PRIVILEGES ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' WITH GRANT OPTION;
+    GRANT NDB_STORED_USER ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}';
+    FLUSH PRIVILEGES;
+    
+    CREATE TABLE IF NOT EXISTS initialized_flag ( ignore_col int);
+
+  END IF;
+END //
+DELIMITER ;
+CALL initDBS();
 
 {{- end -}}
 {{- end -}}
@@ -41,3 +60,19 @@ securityContext:
   runAsGroup: 1000
   fsGroup: 1000
 {{- end }}
+
+{{- define "rondb.storageClassName" -}}
+{{- if and $.Values.global $.Values.global.storageClassName -}}
+storageClassName: {{  $.Values.global.storageClassName | quote }}
+{{- else if $.Values.resources.requests.storage.storageClassName -}}
+storageClassName: {{  $.Values.resources.requests.storage.storageClassName | quote }}
+{{- end -}}
+{{- end -}}
+
+{{- define "rondb.diskColumn.storageClassName" -}}
+{{- if and $.Values.global $.Values.global.storageClassName -}}
+storageClassName: {{  $.Values.global.storageClassName | quote }}
+{{- else if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName -}}
+storageClassName: {{  $.Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName | quote }}
+{{- end -}}
+{{- end -}}

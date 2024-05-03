@@ -205,10 +205,25 @@
                             "type": "object",
                             "description": "Volume sizes",
                             "properties": {
+                                "storageClassName":{
+                                    "type": ["string", "null"],
+                                    "default": null,
+                                    "description": "Storage class name to request for volumes attached to the management and the data nodes."
+                                },
                                 "dedicatedDiskColumnVolume":{
-                                    "type": "boolean",
-                                    "default": false,
-                                    "description": "Whether to use a dedicated volume only for on disk columns or not."
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled":{
+                                            "type": "boolean",
+                                            "default": false,
+                                            "description": "Whether to use a dedicated volume only for on disk columns or not."
+                                        },
+                                        "storageClassName":{
+                                            "type": ["string", "null"],
+                                            "default": null,
+                                            "description": "Storage class name to request for the disk columns volume."
+                                        }
+                                    }
                                 },
                                 "diskColumnGiB": {
                                     "type": "integer",

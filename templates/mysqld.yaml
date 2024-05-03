@@ -10,14 +10,6 @@ spec:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
       rondbService: mysqld
-  volumeClaimTemplates:
-    - metadata:
-        name: dbs-have-initialized
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: 1Ki
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -123,8 +115,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: MYSQL_DATABASES_INIT_FILE
-            value: /etc/pod-info/database-is-initialised.txt
         # This will block liveliness & readiness probes
         # If the startupProbe fails, the pod will be killed
         # The MySQL init takes >20s
@@ -188,8 +178,6 @@ spec:
         - name: sql-init-script
           mountPath: /srv/hops/docker/rondb_standalone/sql_init_scripts
 {{ end }}
-        - name: dbs-have-initialized
-          mountPath: /etc/pod-info
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.

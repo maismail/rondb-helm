@@ -55,7 +55,7 @@ then
 
     BASE_DIR=/srv/hops/mysql-cluster
     RONDB_VOLUME=${BASE_DIR}/rondb
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume }}
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
     RONDB_DIRS=(log ndb_data ndb_undo_files)
 {{ else }}
     RONDB_DIRS=(log ndb_data ndb_data_files ndb_undo_files)

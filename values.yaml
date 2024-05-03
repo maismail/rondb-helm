@@ -73,7 +73,10 @@ resources:
       mysqldMiB: 650
       benchsMiB: 100
     storage:
-      dedicatedDiskColumnVolume: false
+      storageClassName: null
+      dedicatedDiskColumnVolume:
+        enabled: false
+        storageClassName: null
       diskColumnGiB: 2
       redoLogGiB: 2
       undoLogsGiB: 2
