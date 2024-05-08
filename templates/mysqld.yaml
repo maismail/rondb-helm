@@ -209,10 +209,6 @@ kind: Service
 metadata:
   name: {{ .Values.meta.mysqld.headlessClusterIp.name }}
   namespace: {{ .Release.Namespace }}
-  annotations:
-    {{- range $k, $v := .Values.meta.mysqld.headlessClusterIp.annotations }}
-    {{ $k }}: {{ $v | quote }}
-    {{- end }}
 spec:
   # Headless service for individual DNS records for the pods
   clusterIP: None
@@ -226,18 +222,25 @@ spec:
       port: {{ .Values.meta.mysqld.headlessClusterIp.port }}
       targetPort: 3306
 ---
-# This is for the Ingress controller to route traffic to the MySQL server
+# This is for
+# - the Ingress controller to route traffic to the MySQL server
+# - connecting to a MySQLd via Consul
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.meta.mysqld.serviceName }}
+  name: {{ .Values.meta.mysqld.service.name }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- range $k, $v := .Values.meta.mysqld.service.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
 spec:
   type: ClusterIP
   selector:
     rondbService: mysqld
   ports:
-  - port: 3306
+  - protocol: TCP
+    port: {{ .Values.meta.mysqld.service.port }}
     targetPort: 3306
 ---
 {{ if .Values.mysql.sqlInitContent }}
@@ -286,6 +289,8 @@ spec:
   duration: 2160h # 90d
   renewBefore: 360h # 15d
   dnsNames:
+    - {{ .Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+    # TODO: this is not needed?
     - {{ .Values.meta.mysqld.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     name: selfsigned-issuer

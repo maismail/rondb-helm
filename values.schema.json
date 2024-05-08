@@ -48,9 +48,6 @@
                 "mysqld": {
                     "type": "object",
                     "properties": {
-                        "serviceName": {
-                            "type": "string"
-                        },
                         "statefulSetName": {
                             "type": "string"
                         },
@@ -71,10 +68,28 @@
                                 "name",
                                 "port"
                             ]
+                        },
+                        "service": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "type": "integer"
+                                },
+                                "annotations": {
+                                    "type": "object"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "port"
+                            ]
                         }
                     },
                     "required": [
-                        "serviceName",
+                        "service",
                         "statefulSetName",
                         "headlessClusterIp"
                     ]

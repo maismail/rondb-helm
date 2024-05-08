@@ -103,5 +103,5 @@ spec:
     rondbService: mgmd
   ports:
     - protocol: TCP
-      port: 1186
+      port: {{ .Values.meta.mgmd.headlessClusterIp.port }}
       targetPort: 1186
