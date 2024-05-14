@@ -4,13 +4,19 @@ kind: Job
 metadata:
   name: benchs
   namespace: {{ .Release.Namespace }}
+  labels:
+    rondbService: benchmark
 spec:
   parallelism: 1
   backoffLimit: 1
   template:
+    metadata:
+      labels:
+        rondbService: benchmark
     spec:
       {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
-      restartPolicy: OnFailure
+      # So we collect errors in case of failures
+      restartPolicy: Never
       initContainers:
       - name: mysqld-dependency-check
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
@@ -155,8 +161,25 @@ kind: Pod
 metadata:
   name: fetch-bench-results
   namespace: {{ .Release.Namespace }}
+  labels:
+    rondbService: benchmark-fetcher
 spec:
 {{- include "rondb.SecurityContext" . | indent 2 }}
+{{- include "hopsworkslib.imagePullSecrets" . | indent 2 }}
+  metadata:
+    labels:
+      rondbService: benchmark-fetcher
+  affinity:
+    # We need to add this in the same node as benchs
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: rondbService
+            operator: In
+            values:
+            - benchmark
+        topologyKey: kubernetes.io/hostname
   containers:
   - name: idle-results-fetcher
     image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
@@ -172,7 +195,7 @@ spec:
   - name: benchmarks
     persistentVolumeClaim:
       claimName: benchmarks-claim
-  restartPolicy: Never
+  restartPolicy: OnFailure
 ---
 apiVersion: v1
 kind: ConfigMap
