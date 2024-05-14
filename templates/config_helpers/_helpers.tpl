@@ -21,7 +21,6 @@ NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
 Create the main Hopsworks user
 */}}
 {{- define "rondb.sqlInitContent" -}}
-{{- if and .Values.global .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
 DELIMITER //
 CREATE DATABASE IF NOT EXISTS dbs_have_initialized;
 USE dbs_have_initialized;
@@ -34,12 +33,17 @@ BEGIN
 
   IF table_count = 0 THEN
 
-{{ .Values.mysql.sqlInitContent | indent 4}}
+{{- range $k, $v := .Values.mysql.sqlInitContent }}
+{{ $v | indent 4 }}
+{{- end }}
 
+{{- if and .Values.global .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
     CREATE USER IF NOT EXISTS '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global.mysql.password }}';
     GRANT ALL PRIVILEGES ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' WITH GRANT OPTION;
+    -- Save user in RonDB (to access them on any MySQLd)
     GRANT NDB_STORED_USER ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}';
     FLUSH PRIVILEGES;
+{{- end }}
     
     CREATE TABLE IF NOT EXISTS initialized_flag ( ignore_col int);
 
@@ -48,7 +52,6 @@ END //
 DELIMITER ;
 CALL initDBS();
 
-{{- end -}}
 {{- end -}}
 
 {{- define "rondb.SecurityContext" -}}
@@ -76,3 +79,24 @@ storageClassName: {{  $.Values.global.storageClassName | quote }}
 storageClassName: {{  $.Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName | quote }}
 {{- end -}}
 {{- end -}}
+
+{{- define "rondb.apiInitContainer" -}}
+- name: cluster-dependency-check
+  image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+  command:
+  - /bin/bash
+  - -c
+  - |
+{{ tpl (.Files.Get "files/entrypoints/apis.sh") . | indent 4 }}
+  env:
+  - name: MGMD_HOSTNAME
+    value: {{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
+  - name: MYSQLD_SERVICE_HOSTNAME
+    value: {{ .Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+  - name: MYSQL_BENCH_USER
+    value: {{ .Values.benchmarking.mysqlUsername }}
+  - name: MYSQL_BENCH_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        {{- toYaml .Values.benchmarking.credentialsSecret | nindent 8 }}
+{{- end }}

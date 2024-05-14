@@ -53,6 +53,18 @@ helm upgrade -i my-rondb \
     --values ./values.minikube.small.yaml .
 ```
 
+## Run tests
+
+As soon as the Helmchart has been instantiated, we can run the following tests:
+
+```bash
+# Create some dummy data
+helm test -n $RONDB_NAMESPACE my-rondb --filter name=generate-data
+
+# Check that data has been created correctly
+helm test -n $RONDB_NAMESPACE my-rondb --filter name=verify-data
+```
+
 ## Run benchmarks
 
 Whilst the `size` in `minikube.<size>.yaml` determines the cluster power, it does not determine any cluster size. For benchmarks, minimal data node replication and many MySQL servers are best.

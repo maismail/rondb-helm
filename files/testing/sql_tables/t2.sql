@@ -1,0 +1,12 @@
+CREATE TABLE t2 (
+    id INT NOT NULL,
+    fid_t1 INT NOT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    str VARCHAR(500) NOT NULL,
+    rid_t5_k_fid_t2 INT NOT NULL,
+    rid_t6_k_fid_t2 INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY k_fid_t1 (fid_t1),
+    CONSTRAINT k_rid_t5_fid_t2 FOREIGN KEY (rid_t5_k_fid_t2) REFERENCES t5 (fid_t2) ON DELETE CASCADE,
+    CONSTRAINT k_rid_t6_fid_t2 FOREIGN KEY (rid_t6_k_fid_t2) REFERENCES t6 (fid_t2) ON DELETE CASCADE
+) TABLESPACE ts_1 STORAGE DISK ENGINE = NDB;

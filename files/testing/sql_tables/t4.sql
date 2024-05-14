@@ -1,0 +1,10 @@
+CREATE TABLE t4 (
+    id INT NOT NULL,
+    fid_t1 INT NOT NULL,
+    fchar_t1 CHAR(20) NOT NULL,
+    fid2_t1 INT NOT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    str VARCHAR(500) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY k_fid_t1 (fid_t1, fchar_t1, fid2_t1)
+) TABLESPACE ts_1 STORAGE DISK ENGINE = NDB;

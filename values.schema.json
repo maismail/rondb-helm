@@ -129,11 +129,15 @@
                 },
                 "toolbox": {
                     "$ref": "#/$defs/image"
+                },
+                "dataValidation": {
+                    "$ref": "#/$defs/image"
                 }
             },
             "required": [
                 "rondb",
-                "toolbox"
+                "toolbox",
+                "dataValidation"
             ]
         },
         "mysql": {
@@ -144,8 +148,8 @@
                     "$ref": "#/$defs/secret"
                 },
                 "sqlInitContent": {
-                    "type": "string",
-                    "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent though, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
+                    "type": "object",
+                    "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
                 }
             }
         },

@@ -36,12 +36,24 @@ images:
     repository: ""
     name: alpine
     tag: latest
+  dataValidation:
+    registry: docker.io
+    repository: ""
+    name: python
+    tag: 3.12-slim
 mysql:
-  sqlInitContent: |
-    CREATE TABLE IF NOT EXISTS ycsb.usertable (
-        YCSB_KEY VARCHAR(255) PRIMARY KEY,
-        FIELD0 varbinary(4096)
-    );
+  sqlInitContent: 
+    ycsbTable: |
+      CREATE TABLE IF NOT EXISTS ycsb.usertable (
+          YCSB_KEY VARCHAR(255) PRIMARY KEY,
+          FIELD0 varbinary(4096)
+      );
+    # This is for Helm tests
+    exampleDbAccess: |
+      GRANT ALL PRIVILEGES ON exampledb.* TO 'bench'@'%';
+      -- Save user in RonDB (to access them on any MySQLd)
+      GRANT NDB_STORED_USER ON *.* TO 'bench'@'%';
+      FLUSH PRIVILEGES;
   rootCredentialsSecret:
     name: "mysql-passwords"
     key: "root"

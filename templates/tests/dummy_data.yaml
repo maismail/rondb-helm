@@ -1,0 +1,86 @@
+{{- define "rondb.dataPod" -}}
+{{/*
+Depending on the input, this template can create both a Pod that
+generates dummy data and a Pod that verifies the data. This can be
+used to test data storage of arbitrary cluster, but also whether
+a backup has been restored correctly on a new cluster.
+*/}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .functionName | quote }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": {{ .hookWeight | quote }}
+spec:
+  restartPolicy: Never
+  initContainers:    
+{{ include "rondb.apiInitContainer" . | indent 4 }}
+  containers:
+    - name: {{ .functionName | quote }}
+      image: {{ include "image_address" (dict "image" .Values.images.dataValidation) }}
+      command:
+      - /bin/bash
+      - -c
+      - |
+{{- $utilsDir := "/home/utils" }}
+{{- $scriptsDir := "/home/sql-scripts" }}
+        pip3 install -r {{ $utilsDir }}/requirements.txt
+        python3 {{ $utilsDir }}/mysql_data.py \
+          --mysql-hostname "$MYSQL_HOSTNAME" \
+          --mysql-user "$MYSQL_BENCH_USER" \
+          --mysql-password "$MYSQL_BENCH_PASSWORD" \
+          --sql-scripts-dir {{ $scriptsDir | quote }} \
+          --run {{ .functionName | quote }}
+      env:
+        - name: MYSQL_HOSTNAME
+          value: {{ .Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+        - name: MYSQL_BENCH_USER
+          value: {{ .Values.benchmarking.mysqlUsername }}
+        - name: MYSQL_BENCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              {{- toYaml .Values.benchmarking.credentialsSecret | nindent 14 }}
+      volumeMounts:
+      - name: mysql-client-configs
+        mountPath: {{ $utilsDir }}
+      - name: sql-scripts
+        mountPath: {{ $scriptsDir }}
+  volumes:
+  - name: mysql-client-configs
+    configMap:
+      name: mysql-client-configs
+  - name: sql-scripts
+    configMap:
+      name: sql-scripts
+{{- end -}}
+
+{{ include "rondb.dataPod" (merge (dict 
+    "functionName" "generate-data"
+    "hookWeight" 10
+) .) }}
+---
+{{ include "rondb.dataPod" (merge (dict 
+    "functionName" "verify-data"
+    "hookWeight" 11
+) .) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-client-configs
+  namespace: {{ .Release.Namespace }}
+data:
+  requirements.txt: |
+{{ tpl (.Files.Get "files/testing/requirements.txt") . | indent 4 }}
+  mysql_data.py: |
+{{ tpl (.Files.Get "files/testing/mysql_data.py") . | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sql-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+{{- (.Files.Glob "files/testing/sql_tables/**.sql").AsConfig | nindent 2 }}

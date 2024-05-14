@@ -251,7 +251,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
     init.sql: |
-{{ include "rondb.sqlInitContent" . | indent 8 }}
+{{ include "rondb.sqlInitContent" . | indent 6 }}
 ---
 {{ end }}
 {{ if not (eq .Values.clusterSize.minNumMySQLServers .Values.clusterSize.maxNumMySQLServers) }}
