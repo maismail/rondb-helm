@@ -30,7 +30,7 @@ images:
     registry: docker.io
     repository: hopsworks
     name: rondb-standalone
-    tag: 22.10.1-0.4
+    tag: 22.10.3-0.5
   toolbox:
     registry: docker.io
     repository: ""
