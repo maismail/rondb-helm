@@ -33,9 +33,9 @@ images:
     tag: 22.10.3-0.5
   toolbox:
     registry: docker.io
-    repository: ""
-    name: alpine
-    tag: latest
+    repository: hopsworks
+    name: hwutils
+    tag: "0.1"
   dataValidation:
     registry: docker.io
     repository: ""
