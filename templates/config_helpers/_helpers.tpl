@@ -37,11 +37,11 @@ BEGIN
 {{ $v | indent 4 }}
 {{- end }}
 
-{{- if and .Values.global .Values.global.mysql.user .Values.global.mysql.password .Values.global.mysql.grant_on_host }}
-    CREATE USER IF NOT EXISTS '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global.mysql.password }}';
-    GRANT ALL PRIVILEGES ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}' WITH GRANT OPTION;
+{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.mysql.user .Values.global._hopsworks.mysql.password .Values.global._hopsworks.mysql.grant_on_host }}
+    CREATE USER IF NOT EXISTS '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}' IDENTIFIED WITH mysql_native_password BY '{{ .Values.global._hopsworks.mysql.password }}';
+    GRANT ALL PRIVILEGES ON *.* TO '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}' WITH GRANT OPTION;
     -- Save user in RonDB (to access them on any MySQLd)
-    GRANT NDB_STORED_USER ON *.* TO '{{ .Values.global.mysql.user }}'@'{{ .Values.global.mysql.grant_on_host }}';
+    GRANT NDB_STORED_USER ON *.* TO '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}';
     FLUSH PRIVILEGES;
 {{- end }}
     
@@ -65,18 +65,18 @@ securityContext:
 {{- end }}
 
 {{- define "rondb.storageClassName" -}}
-{{- if and $.Values.global $.Values.global.storageClassName -}}
-storageClassName: {{  $.Values.global.storageClassName | quote }}
-{{- else if $.Values.resources.requests.storage.storageClassName -}}
-storageClassName: {{  $.Values.resources.requests.storage.storageClassName | quote }}
+{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
+storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
+{{- else if .Values.resources.requests.storage.storageClassName -}}
+storageClassName: {{  .Values.resources.requests.storage.storageClassName | quote }}
 {{- end -}}
 {{- end -}}
 
 {{- define "rondb.diskColumn.storageClassName" -}}
-{{- if and $.Values.global $.Values.global.storageClassName -}}
-storageClassName: {{  $.Values.global.storageClassName | quote }}
-{{- else if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName -}}
-storageClassName: {{  $.Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName | quote }}
+{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
+storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
+{{- else if .Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName -}}
+storageClassName: {{  .Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName | quote }}
 {{- end -}}
 {{- end -}}
 

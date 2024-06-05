@@ -81,8 +81,8 @@ spec:
             port: 4406
 {{ if and (.Values.tls.endToEnd.enabled)
     ( or
-        (not .Values.global)
-        (and .Values.global .Values.global.security.tls.enabled)
+        (include "hopsworkslib.withoutHopsworks" .)
+        .Values.global._hopsworks.security.tls.enabled
     )
 }}
             scheme: HTTPS
@@ -99,8 +99,8 @@ spec:
             port: 4406
 {{ if and (.Values.tls.endToEnd.enabled)
     ( or
-        (not .Values.global)
-        (and .Values.global .Values.global.security.tls.enabled)
+        (include "hopsworkslib.withoutHopsworks" .)
+        .Values.global._hopsworks.security.tls.enabled
     )
 }}
             scheme: HTTPS
@@ -123,8 +123,8 @@ spec:
           subPath: rest_api.json
 {{ if and (.Values.tls.endToEnd.enabled)
     ( or
-        (not .Values.global)
-        (and .Values.global .Values.global.security.tls.enabled)
+        (include "hopsworkslib.withoutHopsworks" .)
+        .Values.global._hopsworks.security.tls.enabled
     )
 }}
         - name: tls-certificates
@@ -136,14 +136,14 @@ spec:
       # even if it is rescheduled to a different node.
       volumes:
 {{ if .Values.tls.endToEnd.enabled }}
-    {{ if not .Values.global }}
+    {{ if include "hopsworkslib.withoutHopsworks" . }}
       # This will be created by the cert-manager via the Certificate CRD
       # The RDRS will therefore not start until the certificate is available
       - name: tls-certificates
         secret:
           secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
           optional: false    
-    {{ else if .Values.global.security.tls.enabled }}
+    {{ else if .Values.global._hopsworks.security.tls.enabled }}
       # This will be created by the certs-operator via the HopsworksCert CRD
       # The RDRS will therefore not start until the certificate is available
       - name: tls-certificates
@@ -226,7 +226,7 @@ spec:
 {{ end }}
 ---
 {{ if .Values.tls.endToEnd.enabled }}
-    {{ if not .Values.global }}
+    {{ if include "hopsworkslib.withoutHopsworks" . }}
 # Certificates will prompt the cert-manager to create a TLS Secret using the referenced
 # Issuer.
 apiVersion: cert-manager.io/v1
@@ -244,7 +244,7 @@ spec:
     name: selfsigned-issuer
     kind: Issuer
 ---
-    {{ else if .Values.global.security.tls.enabled }}
+    {{ else if .Values.global._hopsworks.security.tls.enabled }}
 # HopsworksCert will prompt the certs-operator to create a Secret using the Hopsworks CA.
 apiVersion: certs.hopsworks.ai/v1alpha1
 kind: HopsworksCert

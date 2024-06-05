@@ -129,7 +129,7 @@ spec:
               - 'ping'
               - '-uroot'
               - '--protocol=tcp'
-{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
               - --ssl-mode=REQUIRED
 {{ else }}
               - --ssl-mode=PREFERRED
@@ -144,7 +144,7 @@ spec:
               - 'mysqladmin'
               - 'ping'
               - '-uroot'
-{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
               - --ssl-mode=REQUIRED
 {{ else }}
               - --ssl-mode=PREFERRED
@@ -181,7 +181,7 @@ spec:
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
-{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
         - name: tls-certificates
           mountPath: /etc/tls
           readOnly: true
@@ -195,7 +195,7 @@ spec:
         configMap:
           name: sql-init-script
 {{ end }}
-{{ if and (not .Values.global) .Values.tls.endToEnd.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
       # This will be created by the cert-manager via the Certificate CRD
       # The MySQLd will therefore not start until the certificate is available
       - name: tls-certificates
@@ -276,7 +276,7 @@ spec:
         averageUtilization: 70
 {{ end }}
 ---
-{{ if and (not .Values.global) .Values.tls.ingress.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.ingress.enabled }}
 # Certificates will prompt the cert-manager to create a TLS Secret using the referenced
 # Issuer.
 apiVersion: cert-manager.io/v1
