@@ -268,7 +268,7 @@
                                     "minimum": 0,
                                     "maximum": 2
                                 },
-                                "logGib": {
+                                "logGiB": {
                                     "type": "integer",
                                     "default": 2
                                 }
@@ -448,6 +448,25 @@
                 "enabled",
                 "mysqlUsername",
                 "type"
+            ]
+        },
+        "backups": {
+            "type": "object",
+            "description": "Whether, how and how often to run regular backups on the cluster",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "objectStorageProvider": {
+                    "enum": [
+                        "s3"
+                    ],
+                    "default": "s3"
+                }
+            },
+            "required": [
+                "enabled"
             ]
         }
     },

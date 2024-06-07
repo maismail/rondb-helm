@@ -53,17 +53,18 @@ then
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ does not exist - we'll do an initial start here"
     INITIAL_START="--initial"
 
+    # Creating symlinks to the persistent volume
     BASE_DIR=/srv/hops/mysql-cluster
     RONDB_VOLUME=${BASE_DIR}/rondb
 {{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
-    RONDB_DIRS=(log ndb_data ndb_undo_files)
+    RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups)
 {{ else }}
-    RONDB_DIRS=(log ndb_data ndb_data_files ndb_undo_files)
+    RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups ndb_data_files)
 {{ end }}
     for dir in ${RONDB_DIRS[@]}
     do
         rm -rf ${BASE_DIR}/${dir}
-        mkdir ${RONDB_VOLUME}/${dir}
+        mkdir -p ${RONDB_VOLUME}/${dir}
         ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
     done
     

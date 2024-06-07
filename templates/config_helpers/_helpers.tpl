@@ -100,3 +100,23 @@ storageClassName: {{  .Values.resources.requests.storage.dedicatedDiskColumnVolu
       secretKeyRef:
         {{- toYaml .Values.benchmarking.credentialsSecret | nindent 8 }}
 {{- end }}
+
+{{- define "rondb.createRcloneConfig" -}}
+echo "Location of rclone config file:"
+rclone config file
+
+echo "Templating file $RCLONE_MOUNT_FILEPATH to $RCLONE_CONFIG"
+cp $RCLONE_MOUNT_FILEPATH $RCLONE_CONFIG
+
+# Helper function to escape special characters in the variable
+escape_sed() {
+    echo "$1" | sed -e 's/[\/&]/\\&/g'
+}
+
+# Escape the variables
+ESCAPED_ACCESS_KEY_ID=$(escape_sed "$ACCESS_KEY_ID")
+ESCAPED_SECRET_ACCESS_KEY=$(escape_sed "$SECRET_ACCESS_KEY")
+
+sed -i "s|REG_ACCESS_KEY_ID|$ESCAPED_ACCESS_KEY_ID|g" "$RCLONE_CONFIG"
+sed -i "s|REG_SECRET_ACCESS_KEY|$ESCAPED_SECRET_ACCESS_KEY|g" "$RCLONE_CONFIG"
+{{- end }}

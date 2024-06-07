@@ -17,7 +17,7 @@ if [ "$NUM_FOUND" -lt 1 ]; then
     for dir in log mgmd
     do
         rm -rf ${BASE_DIR}/${dir}
-        mkdir ${RONDB_VOLUME}/${dir}
+        mkdir -p ${RONDB_VOLUME}/${dir}
         ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
     done
 

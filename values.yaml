@@ -35,7 +35,7 @@ images:
     registry: docker.io
     repository: hopsworks
     name: hwutils
-    tag: "0.1"
+    tag: "0.2"
   dataValidation:
     registry: docker.io
     repository: ""
@@ -96,7 +96,7 @@ resources:
       redoLogGiB: 2
       undoLogsGiB: 2
       slackGiB: 1
-      logGib: 2
+      logGiB: 2
 rondbConfig:
   MaxNoOfTables: 384
   MaxNoOfAttributes: 8000
@@ -143,3 +143,20 @@ benchmarking:
     threadCountsToRun: "1;2;4;8;12;16;24;32;64"
     rows: 100000
     minimizeBandwidth: false
+backups:
+  enabled: false
+  rcloneRemoteName: hopsworksRemote
+  schedule: "0 3 * * mon"
+  objectStorageProvider: "s3"
+  s3:
+    keyCredentialsSecret:
+      name: aws-credentials
+      key: key_id
+    secretCredentialsSecret:
+      name: aws-credentials
+      key: access_key
+    bucketName: "rondb-backups"
+    region: "us-west"
+    # possible values: aws:kms, aws:kms:dsse, AES256
+    serverSideEncryption: aws:kms
+    sseKmsKeyId: "arn:aws:kms:us-west-2:012345678900:key/00000000-0000-0000-0000-000000000000"

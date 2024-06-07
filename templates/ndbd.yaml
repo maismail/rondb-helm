@@ -51,8 +51,18 @@ spec:
 {{ include "rondb.storageClassName" $ | indent 8 }}
         resources:
           requests:
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
-            storage: {{ add $.Values.resources.requests.storage.redoLogGiB $.Values.resources.requests.storage.undoLogsGiB $.Values.resources.requests.storage.slackGiB $.Values.resources.requests.storage.logGib }}Gi
+{{- $backupGiB := add
+    (div $.Values.resources.limits.memory.ndbmtdsMiB 1024)
+    $.Values.resources.requests.storage.undoLogsGiB
+}}
+{{- if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+            storage: {{ add
+                $backupGiB
+                $.Values.resources.requests.storage.redoLogGiB
+                $.Values.resources.requests.storage.undoLogsGiB
+                $.Values.resources.requests.storage.slackGiB
+                $.Values.resources.requests.storage.logGiB
+            }}Gi
     - metadata:
         name: rondb-ndbmtd-dc
       spec:
@@ -60,10 +70,20 @@ spec:
 {{ include "rondb.diskColumn.storageClassName" $ | indent 8 }}
         resources:
           requests:
-            storage: {{ add $.Values.resources.requests.storage.diskColumnGiB  $.Values.resources.requests.storage.slackGiB }}Gi
-{{ else }}
-            storage: {{ add $.Values.resources.requests.storage.diskColumnGiB $.Values.resources.requests.storage.redoLogGiB $.Values.resources.requests.storage.undoLogsGiB $.Values.resources.requests.storage.slackGiB $.Values.resources.requests.storage.logGib }}Gi
-{{ end }}
+            storage: {{ add
+                $.Values.resources.requests.storage.diskColumnGiB 
+                $.Values.resources.requests.storage.slackGiB
+            }}Gi
+{{- else }}
+            storage: {{ add
+                $backupGiB
+                $.Values.resources.requests.storage.diskColumnGiB
+                $.Values.resources.requests.storage.redoLogGiB
+                $.Values.resources.requests.storage.undoLogsGiB
+                $.Values.resources.requests.storage.slackGiB
+                $.Values.resources.requests.storage.logGiB
+            }}Gi
+{{- end }}
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -79,7 +99,7 @@ spec:
 {{- include "rondb.SecurityContext" $ | indent 6 }}
       affinity:
         podAntiAffinity:
-{{ if not $.Values.isMultiNodeCluster }}
+{{- if not $.Values.isMultiNodeCluster }}
           # Must be on different nodes
           requiredDuringSchedulingIgnoredDuringExecution:
           # Replicas of same node group must be on different nodes
@@ -104,7 +124,7 @@ spec:
                   values:
                   - mgmd
             topologyKey: kubernetes.io/hostname
-{{ end }}
+{{- end }}
           # Can be in different zones
           preferredDuringSchedulingIgnoredDuringExecution:
           # Placing a MGMd into a different AZ will not affect performance at all,
@@ -135,10 +155,14 @@ spec:
         # Setting resources in order to be in QoS class Guaranteed
         resources:
           limits:
+{{- if $.Values.staticCpuManagerPolicy }}
+            # cpu *has to* be set to 1, otherwise the QoS class will be Burstable
             cpu: 1
+{{- else }}
+            cpu: 0.2
+{{- end }}
             memory: 200Mi
           requests:
-            cpu: 1
             memory: 200Mi
         env:
         - name: MGMD_HOST
@@ -196,8 +220,8 @@ spec:
         ports:
           - containerPort: 11860
         resources:
-          # If not specified, requested resources are set to the limits
-          # This is important to acquire the QoS class Guaranteed
+          # If not specified, requested resources are set to the limits.
+          # This is important to acquire the QoS class Guaranteed.
           limits:
             cpu: {{ $.Values.resources.limits.cpus.ndbmtds }}
             memory: {{ $.Values.resources.limits.memory.ndbmtdsMiB }}Mi
@@ -270,10 +294,59 @@ spec:
         volumeMounts:
         - name: rondb-ndbmtd
           mountPath: /srv/hops/mysql-cluster/rondb
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+{{- if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
         - name: rondb-ndbmtd-dc
           mountPath: /srv/hops/mysql-cluster/ndb_data_files
-{{ end }}
+{{- end }}
+{{- if $.Values.backups.enabled -}}
+{{/* This container is used to receive calls to push backups to object storage */}}
+      - name: rclone-listener
+        image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+{{ include "rondb.createRcloneConfig" . | indent 10 }}
+          sleep infinity
+        resources:
+          # If not specified, requested resources are set to the limits.
+          # This is important to acquire the QoS class Guaranteed.
+          limits:
+{{- if $.Values.staticCpuManagerPolicy }}
+            # cpu *has to* be set to 1, otherwise the QoS class will be Burstable
+            cpu: 1
+{{- else }}
+            cpu: 0.3
+{{- end }}
+            memory: 300Mi
+        env:
+{{- if eq $.Values.backups.objectStorageProvider "s3" }}
+        - name: ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.backups.s3.keyCredentialsSecret | nindent 14 }}
+        - name: SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.backups.s3.secretCredentialsSecret | nindent 14 }}
+{{- end }}
+        - name: RCLONE_MOUNT_FILEPATH
+          value: &rawRCloneConf /home/hopsworks/rclone-raw.conf
+        # This will be read by rclone
+        - name: RCLONE_CONFIG
+          value: /home/hopsworks/rclone.conf
+        volumeMounts:
+        - name: rondb-ndbmtd
+          mountPath: /home/hopsworks/data
+        - name: backup-configs
+          mountPath: *rawRCloneConf
+          subPath: rclone.conf
+      volumes:
+      - name: backup-configs
+        configMap:
+          name: backup-configs
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

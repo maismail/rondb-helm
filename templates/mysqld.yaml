@@ -174,6 +174,9 @@ spec:
           # Using "raw", so that we can sed NodeIds into the file
           mountPath: /srv/hops/mysql-cluster/my-raw.cnf
           subPath: my.cnf
+        - name: backup-scripts
+          mountPath: /srv/hops/mysql-cluster/backup_metadata.sh
+          subPath: backup_metadata.sh
 {{ if .Values.mysql.sqlInitContent }}
         - name: sql-init-script
           mountPath: /srv/hops/docker/rondb_standalone/sql_init_scripts
@@ -190,6 +193,10 @@ spec:
       - name: rondb-configs
         configMap:
           name: rondb-configs
+      - name: backup-scripts
+        configMap:
+          name: backup-scripts
+          defaultMode: 0777
 {{ if .Values.mysql.sqlInitContent }}
       - name: sql-init-script
         configMap:
@@ -203,6 +210,15 @@ spec:
           secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
           optional: false
 {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+    backup_metadata.sh: |
+{{ tpl (.Files.Get "files/backup_metadata.sh") . | indent 6 }}
 ---
 apiVersion: v1
 kind: Service
