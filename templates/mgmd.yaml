@@ -31,6 +31,9 @@ spec:
     spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
 {{- include "rondb.SecurityContext" $ | indent 6 }}
+      {{ if .Values.priorityClass -}}
+      priorityClassName: {{ .Values.priorityClass | quote }}
+      {{- end  }}
       containers:
       - name: mgmd
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
@@ -48,10 +51,11 @@ spec:
             - /bin/bash
             - -c
             - ndb_mgm -e show
-          initialDelaySeconds: 5
-          failureThreshold: 3
-          periodSeconds: 4
-          timeoutSeconds: 2
+
+          initialDelaySeconds: {{ int .Values.probes.initialDelaySeconds | default 5 }}
+          failureThreshold: {{ int .Values.probes.failureThreshold | default 3 }}
+          periodSeconds:  {{ int .Values.probes.periodSeconds | default 4 }}
+          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 2 }}
         # Having a lively MGMd is crucial for other services' healthchecks.
         # Restarting MGMds does not cost much and should be quick.
         livenessProbe:
@@ -60,19 +64,19 @@ spec:
             - /bin/bash
             - -c
             - ndb_mgm -e show
-          initialDelaySeconds: 5
-          failureThreshold: 5
-          periodSeconds: 5
-          timeoutSeconds: 2
+          initialDelaySeconds: {{ int .Values.probes.initialDelaySeconds | default 5 }}
+          failureThreshold: {{ int .Values.probes.failureThreshold | default 5 }}
+          periodSeconds:  {{ int .Values.probes.periodSeconds | default 5 }}
+          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 5 }}
         ports:
           - containerPort: 1186
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mgmds }}
-            memory: 100Mi
+            memory: 500Mi
           requests:
             cpu: {{ .Values.resources.requests.cpus.mgmds }}
-            memory: 50Mi
+            memory: 100Mi
         env:
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only

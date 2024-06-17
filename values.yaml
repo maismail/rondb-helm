@@ -23,7 +23,17 @@ meta:
     statefulSetName: rdrs
 staticCpuManagerPolicy: false
 isMultiNodeCluster: false
+
+probes: {}
+#probes:
+#  periodSeconds: 1
+#  initialDelaySeconds: 5
+#  failureThreshold: 5
+#  probeTimeoutSeconds: 20
+
+
 terminationGracePeriodSeconds: 60
+priorityClass: "ndb-high-priority"
 # TODO: Consider using Chart.appVersion for tag instead
 images:
   rondb:
