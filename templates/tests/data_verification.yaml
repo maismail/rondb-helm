@@ -35,7 +35,7 @@ spec:
           --run {{ .functionName | quote }}
       env:
         - name: MYSQL_HOSTNAME
-          value: {{ .Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+          value: {{ include "rondb.mysqldServiceHostname" . }}
         - name: MYSQL_BENCH_USER
           value: {{ .Values.benchmarking.mysqlUsername }}
         - name: MYSQL_BENCH_PASSWORD

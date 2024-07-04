@@ -23,15 +23,6 @@ meta:
     statefulSetName: rdrs
 staticCpuManagerPolicy: false
 isMultiNodeCluster: false
-
-probes: {}
-#probes:
-#  periodSeconds: 1
-#  initialDelaySeconds: 5
-#  failureThreshold: 5
-#  probeTimeoutSeconds: 20
-
-
 terminationGracePeriodSeconds: 60
 priorityClass: "ndb-high-priority"
 # TODO: Consider using Chart.appVersion for tag instead
@@ -129,6 +120,11 @@ tls:
       secretName: mysqld-tls
     rdrs:
       secretName: rdrs-tls
+# Using minutes for easier template addition
+timeoutsMinutes:
+  singleSetupMySQLds: 5
+  # TODO: Make this dependent on amount of data
+  restoreNativeBackup: 30
 benchmarking:
   enabled: false
   mysqlUsername: "bench"
@@ -153,11 +149,11 @@ benchmarking:
     threadCountsToRun: "1;2;4;8;12;16;24;32;64"
     rows: 100000
     minimizeBandwidth: false
-backups:
-  enabled: false
-  rcloneRemoteName: hopsworksRemote
-  schedule: "0 3 * * mon"
-  objectStorageProvider: "s3"
+restoreFromBackup:
+  backupId: null
+  objectStorageProvider: s3
+  excludeDatabases: []
+  excludeTables: []
   s3:
     keyCredentialsSecret:
       name: aws-credentials
@@ -165,8 +161,22 @@ backups:
     secretCredentialsSecret:
       name: aws-credentials
       key: access_key
-    bucketName: "rondb-backups"
-    region: "us-west"
+    bucketName: rondb-helm
+    region: eu-north-1
     # possible values: aws:kms, aws:kms:dsse, AES256
     serverSideEncryption: aws:kms
-    sseKmsKeyId: "arn:aws:kms:us-west-2:012345678900:key/00000000-0000-0000-0000-000000000000"
+backups:
+  enabled: false
+  schedule: "0 3 * * mon"
+  objectStorageProvider: s3
+  s3:
+    keyCredentialsSecret:
+      name: aws-credentials
+      key: key_id
+    secretCredentialsSecret:
+      name: aws-credentials
+      key: access_key
+    bucketName: rondb-helm
+    region: eu-north-1
+    # possible values: aws:kms, aws:kms:dsse, AES256
+    serverSideEncryption: aws:kms

@@ -1,0 +1,215 @@
+{{/*
+    This Job initializes all MySQL metadata. This means downloading metadata from
+    the backup (if available), and applying it. It also means running the SQL init
+    scripts, if any are provided by the Helm user. The Job will wait for the
+    native restore-backup Job to have completed, if the user has provided a backup ID.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rondb.mysqldSetupJobName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  backoffLimit: 0
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+{{- if .Values.restoreFromBackup.backupId }}
+      serviceAccountName: {{ include "rondb.mysqldSetupServiceAccountName" . }}
+{{- end }}
+{{- include "rondb.SecurityContext" $ | indent 6 }}
+{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+      initContainers:
+{{- if .Values.restoreFromBackup.backupId }}
+      - name: download-mysql-metadata
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        workingDir: /home/hopsworks
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+
+{{ include "rondb.createRcloneConfig" . | indent 10 }}
+
+{{- if eq $.Values.restoreFromBackup.objectStorageProvider "s3" }}
+          REMOTE_BACKUP_DIR={{ include "rondb.rcloneBackupRemoteName" . }}:{{ $.Values.restoreFromBackup.s3.bucketName }}/$BACKUP_ID
+{{- end }}
+          rclone copy --include "*.sql" $REMOTE_BACKUP_DIR/ $LOCAL_BACKUP_DIR/
+
+          (set -x; ls -la $LOCAL_BACKUP_DIR)
+          echo "Successfully downloaded MySQL metadata"
+        env:
+        - name: RCLONE_MOUNT_FILEPATH
+          value: {{ include "rondb.rawRCloneConf" . }}
+        # This will be read by rclone
+        - name: RCLONE_CONFIG
+          value: /home/hopsworks/rclone.conf
+{{- if eq $.Values.backups.objectStorageProvider "s3" }}
+        - name: ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.backups.s3.keyCredentialsSecret | nindent 14 }}
+        - name: SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.backups.s3.secretCredentialsSecret | nindent 14 }}
+{{- end }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: BACKUP_ID
+          value: {{ .Values.restoreFromBackup.backupId | quote }}
+        - name: LOCAL_BACKUP_DIR
+          value: &metadataBackupDir /home/hopsworks/schemata
+        volumeMounts:
+        - name: rclone-configs
+          mountPath: {{ include "rondb.rawRCloneConf" . }}
+          subPath: rclone.conf
+        - name: mysql-restore
+          mountPath: *metadataBackupDir
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+{{- end }}
+{{/* 
+    Always wait for data nodes first so that wait-for-restore-timeout is more accurate.
+    Downloading the native backups happens in the data node Pods before the ndbmtds start up.
+*/}}
+{{ include "rondb.waitDatanodes" . | indent 6 }}
+{{- if .Values.restoreFromBackup.backupId }}
+      - name: wait-restore-backup
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Waiting for restore-backup Job to have completed"
+          set -e
+
+          (set -x; kubectl wait \
+            -n {{ .Release.Namespace }} \
+            --for=condition=complete \
+            --timeout={{ .Values.timeoutsMinutes.restoreNativeBackup }}m \
+            job/{{ include "rondb.restoreNativeBackupJobname" . }})          
+
+          echo "Restore Job has completed successfully"
+        resources:
+          limits:
+            cpu: 0.3
+            memory: 30Mi
+{{- end }}
+      containers:
+{{/*
+    Spawning up a MySQLd without network access, initializing the data directory,
+    and running all init scripts.
+*/}}
+      - name: initialize-mysqld
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+{{ tpl (.Files.Get "files/entrypoints/mysqld_single_setup.sh") . | indent 10 }}
+        volumeMounts:
+        - name: rondb-configs
+          # Using "raw", so that we can sed NodeIds into the file
+          mountPath: /srv/hops/mysql-cluster/my-raw.cnf
+          subPath: my.cnf
+{{- if .Values.mysql.sqlInitContent }}
+        - name: sql-init-script
+          mountPath: {{ include "rondb.sqlInitScriptsDir" . }}/{{ include "rondb.helmSqlInitFile" . }}
+          subPath: {{ include "rondb.helmSqlInitFile" . }}
+{{- end }}
+{{- if .Values.restoreFromBackup.backupId }}
+        # The mount path must be unique; so we cannot mount it directly into the SQL-init directory
+        - name: mysql-restore
+          mountPath: {{ include "rondb.sqlRestoreScriptsDir" . }}
+{{- end }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+{{- toYaml .Values.mysql.rootCredentialsSecret | nindent 14 }}
+        - name: MYSQL_BENCH_USER
+          value: {{ .Values.benchmarking.mysqlUsername }}
+        - name: MYSQL_BENCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+{{- toYaml .Values.benchmarking.credentialsSecret | nindent 14 }}
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpus.mysqlds }}
+            memory: {{ .Values.resources.limits.memory.mysqldMiB }}Mi
+          requests:
+            cpu: {{ .Values.resources.requests.cpus.mysqlds }}
+            memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
+      volumes:
+      - name: rondb-configs
+        configMap:
+          name: rondb-configs
+{{- if .Values.restoreFromBackup.backupId }}
+      - name: rclone-configs
+        configMap:
+          name: rclone-configs
+{{- end }}
+{{- if .Values.restoreFromBackup.backupId }}
+      - name: mysql-restore
+        emptyDir:
+          sizeLimit: 100Mi
+{{- end }}
+{{- if .Values.mysql.sqlInitContent }}
+      - name: sql-init-script
+        configMap:
+          name: sql-init-script
+{{- end }}
+---
+{{ if .Values.mysql.sqlInitContent }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sql-init-script
+  namespace: {{ .Release.Namespace }}
+data:
+    {{ include "rondb.helmSqlInitFile" . }}: |
+{{ include "rondb.sqlInitContent" . | indent 6 }}
+---
+{{ end }}
+{{- if .Values.restoreFromBackup.backupId }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "rondb.mysqldSetupRole" . }}
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: [{{ include "rondb.restoreNativeBackupJobname" . }}]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "rondb.mysqldSetupServiceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "rondb.mysqldSetupRoleBinding" . }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "rondb.mysqldSetupServiceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "rondb.mysqldSetupRole" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

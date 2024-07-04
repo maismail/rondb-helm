@@ -1,0 +1,70 @@
+{{- if or .Values.backups.enabled .Values.restoreFromBackup.backupId }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rclone-configs
+  namespace: {{ .Release.Namespace }}
+data:
+    rclone.conf: |
+        [{{ include "rondb.rcloneRestoreRemoteName" . }}]
+{{- if eq $.Values.restoreFromBackup.objectStorageProvider "s3" }}
+        type = s3
+        provider = AWS
+        access_key_id = REG_ACCESS_KEY_ID
+        secret_access_key = REG_SECRET_ACCESS_KEY
+        region = {{ .Values.restoreFromBackup.s3.region }}
+        server_side_encryption = {{ .Values.restoreFromBackup.s3.serverSideEncryption }}
+        storage_class = STANDARD
+{{- end }}
+
+        [{{ include "rondb.rcloneBackupRemoteName" . }}]
+{{- if eq $.Values.backups.objectStorageProvider "s3" }}
+        type = s3
+        provider = AWS
+        access_key_id = REG_ACCESS_KEY_ID
+        secret_access_key = REG_SECRET_ACCESS_KEY
+        region = {{ .Values.backups.s3.region }}
+        server_side_encryption = {{ .Values.backups.s3.serverSideEncryption }}
+        storage_class = STANDARD
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rondb-backups-rb
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rondb-backups-role
+subjects:
+  - kind: ServiceAccount
+    name: rondb-backups-sa
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rondb-backups-sa
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rondb-backups-role
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames:
+{{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
+{{- range $replica := until 3 }}
+    - node-group-{{ $nodeGroup }}-{{ $replica }}
+{{- end }}
+{{- end }}
+    - {{ include "rondb.mysqldPodname" . }}
+{{- end }}

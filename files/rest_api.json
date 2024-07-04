@@ -13,7 +13,7 @@
     "RonDB": {
         "Mgmds": [
             {
-                "IP": "{{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local",
+                "IP": {{ include "rondb.mgmdHostname" . | quote }},
                 "Port": 1186
             }
         ]

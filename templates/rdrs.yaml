@@ -41,24 +41,7 @@ spec:
                   - rdrs
               topologyKey: topology.kubernetes.io/zone
       initContainers:
-      - name: datanode-dependency-check
-        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
-        command:
-        - /bin/bash
-        - -c
-        - |
-          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
-          until nslookup $MGMD_HOST; do
-            echo "Waiting for $MGMD_HOST to be resolvable..."
-            sleep $(((RANDOM % 2)+2))
-          done
-
-          # Wait until data node is ready
-          until ./docker/rondb_standalone/healthcheck.sh $MGMD_HOST:1186 1; do
-            echo "Dependency healthcheck of ndbmtd failed. Retrying in a bit."
-            sleep $(((RANDOM % 2)+2))
-          done
+{{ include "rondb.waitDatanodes" . | indent 6 }}
       containers:
       - name: rdrs
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
@@ -99,16 +82,16 @@ spec:
           httpGet:
             path: "0.1.0/ping"
             port: 4406
-{{ if and (.Values.tls.endToEnd.enabled)
+{{- if and (.Values.tls.endToEnd.enabled)
     ( or
         (include "hopsworkslib.withoutHopsworks" .)
         .Values.global._hopsworks.security.tls.enabled
     )
 }}
             scheme: HTTPS
-{{ else }}
+{{- else }}
             scheme: HTTP
-{{ end }}
+{{- end }}
           initialDelaySeconds: 5
           periodSeconds: 5
           failureThreshold: 4
@@ -123,7 +106,7 @@ spec:
         - name: rondb-configs
           mountPath: /srv/hops/mysql-cluster/rest_api.json
           subPath: rest_api.json
-{{ if and (.Values.tls.endToEnd.enabled)
+{{- if and (.Values.tls.endToEnd.enabled)
     ( or
         (include "hopsworkslib.withoutHopsworks" .)
         .Values.global._hopsworks.security.tls.enabled
@@ -137,7 +120,7 @@ spec:
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
       volumes:
-{{ if .Values.tls.endToEnd.enabled }}
+{{- if .Values.tls.endToEnd.enabled }}
     {{ if include "hopsworkslib.withoutHopsworks" . }}
       # This will be created by the cert-manager via the Certificate CRD
       # The RDRS will therefore not start until the certificate is available
@@ -145,7 +128,7 @@ spec:
         secret:
           secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
           optional: false    
-    {{ else if .Values.global._hopsworks.security.tls.enabled }}
+{{- else if .Values.global._hopsworks.security.tls.enabled }}
       # This will be created by the certs-operator via the HopsworksCert CRD
       # The RDRS will therefore not start until the certificate is available
       - name: tls-certificates

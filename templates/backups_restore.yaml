@@ -1,0 +1,288 @@
+{{- if .Values.restoreFromBackup.backupId -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rondb.restoreNativeBackupJobname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  backoffLimit: 0
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: rondb-backups-sa
+{{- include "rondb.SecurityContext" $ | indent 6 }}
+{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+      initContainers:
+{{/*
+    1. Wait for data nodes to be up
+    2. Start up a MySQLd to create MySQL system tables; shut it down again
+    3. One ndbd runs restore-meta and disable-indexes
+    4. All ndbds run restore-data
+    5. One ndbd runs rebuild-indexes
+
+    The metadata is globally replicated, hence we only need to restore it on a single node.
+    The same metadata will be in all backup parts.
+*/}}
+{{ include "rondb.waitDatanodes" . | indent 6 }}
+      - name: initialize-mysqld-once
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+
+          SOCKET=/srv/hops/mysql-cluster/mysql.sock
+          CMD=("mysqld" \
+            "--ndbcluster" \
+            "--ndb-connectstring={{ include "rondb.mgmdHostname" . }}:1186" \
+            "--ndb-cluster-connection-pool=1" \
+            "--user=mysql" \
+            "--basedir=/srv/hops/mysql" \
+            "--datadir={{ include "rondb.mysqldDataDir" . }}" \
+            "--log-error-verbosity=3" \
+            "--socket=$SOCKET")
+
+          (set -x; "${CMD[@]}" \
+            --initialize-insecure \
+            --explicit_defaults_for_timestamp)
+        
+          echo && echo "[Entrypoint] Successfully initialized MySQLd" && echo
+
+          (set -x; "${CMD[@]}" \
+            --skip-networking \
+            --daemonize)
+
+          until mysqladmin -uroot --socket="$SOCKET" ping --silent --connect-timeout=2; do
+            echo "[K8s Entrypoint MySQLd] Failed pinging MySQLd on attempt $attempt" && sleep 1
+            attempt=$((attempt+1))
+            if [[ $attempt -gt 5000 ]]; then
+                echo "[K8s Entrypoint MySQLd] Failed pinging MySQLd after 30 attempts" && exit 1
+            fi
+          done
+
+          echo && echo "[K8s Entryoint MySQLd] MySQLd is up and running" && echo
+
+          mysql -uroot --protocol=socket --socket="$SOCKET" -e "SHOW DATABASES;"
+
+          echo && echo "[K8s Entryoint MySQLd] Killing the MySQLd now" && echo
+
+          mysqladmin -uroot -p"" --silent shutdown --socket="$SOCKET"
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpus.mysqlds }}
+            memory: {{ .Values.resources.limits.memory.mysqldMiB }}Mi
+          requests:
+            cpu: {{ .Values.resources.requests.cpus.mysqlds }}
+            memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
+      - name: restore-ndbmtd-metadata
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+
+          # TODO: This needs an empty API slot; consider running on MGMd instead(?)
+
+{{- $excludeDbsCsv := include "rondb.arrayToCsv" (dict "array" .Values.restoreFromBackup.excludeDatabases) }}
+{{- $excludeDbs := "" }}
+{{- if $excludeDbsCsv }}
+    {{- $excludeDbs = printf "--exclude-databases=%s" $excludeDbsCsv }}
+{{- end }}
+{{- $excludeTablesCsv := include "rondb.arrayToCsv" (dict "array" .Values.restoreFromBackup.excludeTables) }}
+{{- $excludeTables := "" }}
+{{- if $excludeTablesCsv }}
+    {{- $excludeTables = printf "--exclude-tables=%s" $excludeTablesCsv }}
+{{- end }}
+
+          set -e
+
+          # Metadata is fully replicated, hence we only need to run it on one directory
+          # Don't take over the old disk *structure*
+          NODE_ID=1
+          RUN_CMD="ndb_restore \
+            --restore-meta \
+            --disable-indexes \
+            --no-restore-disk-objects \
+            --ndb-connectstring=$MGMD_HOST:1186 \
+            --nodeid=$NODE_ID \
+            --backupid=$BACKUP_ID \
+            --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/$NODE_ID \
+            {{ $excludeDbs }} \
+            {{ $excludeTables }}"
+
+          (set -x; kubectl exec \
+            "node-group-0-0" \
+            -c ndbmtd \
+            -n {{ .Release.Namespace }} \
+            -- /bin/bash -c "$RUN_CMD")
+
+          echo "Successfully restored RonDB native metadata"
+        env:
+        - name: MGMD_HOST
+          value: {{ include "rondb.mgmdHostname" . }}
+        - name: BACKUP_ID
+          value: {{ .Values.restoreFromBackup.backupId | quote }}
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+      - name: restore-ndbmtd-data
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+
+{{ include "rondb.mapNewNodesToBackedUpNodes" . | indent 10 }}
+
+          NUM_NODE_GROUPS={{ .Values.clusterSize.numNodeGroups }}
+          NUM_REPLICAS={{ .Values.clusterSize.activeDataReplicas }}
+
+          # TODO: Parallelize this
+          for ((g = 0; g < NUM_NODE_GROUPS; g++)); do
+            for ((r = 0; r < NUM_REPLICAS; r++)); do
+
+              DATANODE_PODNAME="node-group-$g-$r"
+              NODE_ID_OFFSET=$(($g*3))
+              NEW_NODE_ID=$(($NODE_ID_OFFSET+$r+1))
+
+              BACKUP_NODE_IDS=${MAP_NODE_IDS[$NEW_NODE_ID]}
+              for BACKUP_NODE_ID in $BACKUP_NODE_IDS; do
+
+                RUN_CMD="ndb_restore \
+                  --restore-data \
+                  --ndb-connectstring=$MGMD_HOST:1186 \
+                  --nodeid=$BACKUP_NODE_ID \
+                  --backupid=$BACKUP_ID \
+                  --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/$BACKUP_NODE_ID \
+                  {{ $excludeDbs }} \
+                  {{ $excludeTables }}"
+
+                (set -x; kubectl exec \
+                  "$DATANODE_PODNAME" \
+                  -c ndbmtd \
+                  -n {{ .Release.Namespace }} \
+                  -- /bin/bash -c "$RUN_CMD")
+
+              done
+            done
+          done
+
+          echo "Successfully restored RonDB native data"
+        env:
+        - name: MGMD_HOST
+          value: {{ include "rondb.mgmdHostname" . }}
+        - name: BACKUP_ID
+          value: {{ .Values.restoreFromBackup.backupId | quote }}
+{{- if eq $.Values.restoreFromBackup.objectStorageProvider "s3" }}
+        - name: ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.restoreFromBackup.s3.keyCredentialsSecret | nindent 14 }}
+        - name: SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.restoreFromBackup.s3.secretCredentialsSecret | nindent 14 }}
+{{- end }}
+        - name: RCLONE_MOUNT_FILEPATH
+          value: {{ include "rondb.rawRCloneConf" $ }}
+        # This will be read by rclone
+        - name: RCLONE_CONFIG
+          value: /home/hopsworks/rclone.conf
+        volumeMounts:
+        - name: rclone-configs
+          mountPath: {{ include "rondb.rawRCloneConf" $ }}
+          subPath: rclone.conf
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+{{/*
+    TODO:
+        There needs to be one more step and that is --restore-epoch 
+        https://github.com/logicalclocks/ndb-chef/blob/master/files/default/restore_backup.sh#L256
+        This is executed ONLY when setting up the Global replication.
+*/}}
+      - name: restore-backup-indexes
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+
+          set -e
+
+          RUN_CMD="ndb_restore \
+            --rebuild-indexes \
+            --ndb-connectstring=$MGMD_HOST:1186 \
+            --nodeid=1 \
+            --backupid=$BACKUP_ID \
+            --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/1 \
+            {{ $excludeDbs }} \
+            {{ $excludeTables }}"
+
+          (set -x; kubectl exec \
+            "node-group-0-0" \
+            -c ndbmtd \
+            -n {{ .Release.Namespace }} \
+            -- /bin/bash -c "$RUN_CMD")
+
+          echo "Successfully rebuilt RonDB indexes"
+        env:
+        - name: MGMD_HOST
+          value: {{ include "rondb.mgmdHostname" . }}
+        - name: BACKUP_ID
+          value: {{ .Values.restoreFromBackup.backupId | quote }}
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+      containers:
+      - name: remove-native-backup
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+
+          set -e
+
+          NUM_NODE_GROUPS={{ .Values.clusterSize.numNodeGroups }}
+          NUM_REPLICAS={{ .Values.clusterSize.activeDataReplicas }}
+
+          for ((g = 0; g < NUM_NODE_GROUPS; g++)); do
+            for ((r = 0; r < NUM_REPLICAS; r++)); do
+
+              DATANODE_PODNAME="node-group-$g-$r"
+              GENERAL_BACKUP_DIR="/srv/hops/mysql-cluster/ndb/backups/BACKUP"
+              BACKUP_DIR="$GENERAL_BACKUP_DIR/BACKUP-$BACKUP_ID"
+              (set -x; kubectl exec \
+                "$DATANODE_PODNAME" \
+                -c ndbmtd \
+                -n {{ .Release.Namespace }} \
+                -- /bin/bash -c "rm -rf $BACKUP_DIR && ls -la $GENERAL_BACKUP_DIR")
+
+            done
+          done
+
+          echo "Successfully removed native backup ID $BACKUP_ID from data node Pods"
+        env:
+        - name: BACKUP_ID
+          value: {{ .Values.restoreFromBackup.backupId | quote }}
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+      volumes:
+      - name: rclone-configs
+        configMap:
+          name: rclone-configs
+{{- end }}

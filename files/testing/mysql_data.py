@@ -110,13 +110,13 @@ def verify_num_rows(cursor):
         cursor.execute(sql)
         result = cursor.fetchone()
         if i >= 4:
-            assert result[0] == 9, f"t{i} has wrong number of rows"
+            assert result[0] == 9, f"table t{i} has wrong number of rows; expected 9, got {result[0]}"
         elif i == 3:
-            assert result[0] == 8, f"t{i} has wrong number of rows"
+            assert result[0] == 8, f"table t{i} has wrong number of rows; expected 8, got {result[0]}"
         elif i == 2:
-            assert result[0] == 7, f"t{i} has wrong number of rows"
+            assert result[0] == 7, f"table t{i} has wrong number of rows; expected 7, got {result[0]}"
         elif i == 1:
-            assert result[0] == 3, f"t{i} has wrong number of rows"
+            assert result[0] == 3, f"table t{i} has wrong number of rows; expected 3, got {result[0]}"
 
 
 def verify_t1(cursor):

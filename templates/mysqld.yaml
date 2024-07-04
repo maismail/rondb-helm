@@ -6,6 +6,7 @@ metadata:
 spec:
   serviceName: {{ .Values.meta.mysqld.headlessClusterIp.name }}
   replicas: {{ .Values.clusterSize.minNumMySQLServers }}
+  podManagementPolicy: Parallel
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
@@ -19,8 +20,9 @@ spec:
       # Used to apply labels to all pods created by the Deployment
       labels:
         rondbService: mysqld
-    spec:
-      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+    spec:      
+{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+      serviceAccountName: {{ include "rondb.mysqldServiceAccountName" . }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -66,25 +68,60 @@ spec:
       priorityClassName: {{ .Values.priorityClass | quote }}
       {{- end  }}
       initContainers:
-      - name: datanode-dependency-check
-        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+{{/*
+    Always wait for data nodes first so that timeouts are more accurate. Downloading
+    the native backups happens during data node startup.
+*/}}
+{{ include "rondb.waitDatanodes" . | indent 6 }}
+      - name: wait-single-setup-job
+        image: {{ include "image_address" (dict "image" .Values.images.toolbox) }}
         imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
-        # Make sure data node has connected to MGMd
         - /bin/bash
         - -c
         - |
-          MGMD_HOST={{ .Values.meta.mgmd.statefulSetName }}-0.{{ .Values.meta.mgmd.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
-          until nslookup $MGMD_HOST; do
-            echo "Waiting for $MGMD_HOST to be resolvable..."
-            sleep $(((RANDOM % 2)+2))
-          done
+          set -e
+          echo "Waiting for {{ include "rondb.mysqldSetupJobName" . }} Job to have completed"
 
-          # Wait until data node is ready
-          until ./docker/rondb_standalone/healthcheck.sh $MGMD_HOST:1186 1; do
-            echo "Dependency healthcheck of ndbmtd failed. Retrying in a bit"
-            sleep $(((RANDOM % 2)+2))
-          done
+{{- $waitTimeoutMinutes := .Values.timeoutsMinutes.singleSetupMySQLds }}
+{{- if .Values.restoreFromBackup.backupId }}
+    {{- $waitTimeoutMinutes := (add $waitTimeoutMinutes .Values.timeoutsMinutes.restoreNativeBackup) }}
+{{- end }}
+          (
+            set -x
+            kubectl wait \
+                -n {{ .Release.Namespace }} \
+                --for=condition=complete \
+                --timeout={{ $waitTimeoutMinutes }}m \
+                job/{{ include "rondb.mysqldSetupJobName" . }}
+          )
+
+          echo "Setup Job has completed successfully"
+      - name: mysqld-initialize-insecure
+        image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        command:
+        - /bin/bash
+        - -c
+        - |
+{{ tpl (.Files.Get "files/entrypoints/mysqld_init.sh") . | indent 10 }}
+        # TODO: Try to move over the created my.cnf file to the main container
+        env:
+          # This is actually already baked into the image
+          - name: RONDB_DATA_DIR
+            value: /srv/hops/mysql-cluster
+          - name: CONNECTIONS_PER_MYSQLD
+            value: {{ .Values.rondbConfig.MySQLdSlotsPerNode | quote}}
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+        - name: rondb-configs
+          # Using "raw", so that we can sed NodeIds into the file
+          mountPath: /srv/hops/mysql-cluster/my-raw.cnf
+          subPath: my.cnf
+        - name: mysql-data-dir
+          mountPath: {{ include "rondb.mysqldDataDir" . }}
       containers:
       - name: mysqld
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
@@ -93,7 +130,11 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ tpl (.Files.Get "files/entrypoints/mysqlds.sh") . | indent 10 }}
+          set -e
+
+{{ include "rondb.sedMyCnfFile" . | indent 10 }}
+
+          mysqld --defaults-file=$RONDB_DATA_DIR/my.cnf
         ports:
           - containerPort: 3306
         resources:
@@ -104,6 +145,9 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.mysqlds }}
             memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
         env:
+          # This is actually already baked into the image
+          - name: RONDB_DATA_DIR
+            value: /srv/hops/mysql-cluster
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -120,43 +164,27 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-        # This will block liveliness & readiness probes
-        # If the startupProbe fails, the pod will be killed
-        # The MySQL init takes >20s
-        # The MySQL server will first start up with --no-networking
-        # During this phase, passwords are initialized. Then it is
-        # restarted. Hence, we ping with TCP to make sure it has
-        # restarted.
-        startupProbe:
-          exec:
-            command:
-              - 'mysqladmin'
-              - 'ping'
-              - '-uroot'
-              - '--protocol=tcp'
-{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
-              - --ssl-mode=REQUIRED
-{{ else }}
-              - --ssl-mode=PREFERRED
-{{ end }}
-          initialDelaySeconds: {{ int .Values.probes.initialDelaySeconds | default 5 }}
-          failureThreshold: {{ int .Values.probes.failureThreshold | default 70 }}
-          periodSeconds:  {{ int .Values.probes.periodSeconds | default 1 }}
-          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 2 }}
         livenessProbe:
           exec:
             command:
-              - 'mysqladmin'
-              - 'ping'
-              - '-uroot'
-{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
-              - --ssl-mode=REQUIRED
-{{ else }}
-              - --ssl-mode=PREFERRED
-{{ end }}
-          failureThreshold: {{ int .Values.probes.failureThreshold | default 4 }}
-          periodSeconds:  {{ int .Values.probes.periodSeconds | default 5 }}
-          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 2 }}
+              # An "Access Denied" will still return error code 0 because the server is up
+              # Alternatively, one can use the command "status"
+              - /bin/bash
+              - -c
+              - |
+                mysqladmin \
+                    --defaults-file=$RONDB_DATA_DIR/my.cnf \
+                    ping \
+                    --protocol=tcp \
+{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+                    --ssl-mode=REQUIRED
+{{- else }}
+                    --ssl-mode=PREFERRED
+{{- end }}
+          initialDelaySeconds: 5
+          failureThreshold: 4
+          periodSeconds: 5
+          timeoutSeconds: 2
         readinessProbe:
           exec:
             command:
@@ -166,9 +194,10 @@ spec:
               set -e
               mysql --defaults-file=$RONDB_DATA_DIR/my.cnf \
                 -e "SELECT 1"
-          failureThreshold: {{ int .Values.probes.failureThreshold | default 2 }}
-          periodSeconds:  {{ int .Values.probes.periodSeconds | default 5 }}
-          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 2 }}
+          initialDelaySeconds: 5
+          failureThreshold: 2
+          periodSeconds: 5
+          timeoutSeconds: 2
         securityContext:
           capabilities:
             add:
@@ -179,17 +208,15 @@ spec:
           # Using "raw", so that we can sed NodeIds into the file
           mountPath: /srv/hops/mysql-cluster/my-raw.cnf
           subPath: my.cnf
+        - name: mysql-data-dir
+          mountPath: {{ include "rondb.mysqldDataDir" . }}
         - name: backup-scripts
           mountPath: /srv/hops/mysql-cluster/backup_metadata.sh
           subPath: backup_metadata.sh
-{{ if .Values.mysql.sqlInitContent }}
-        - name: sql-init-script
-          mountPath: /srv/hops/docker/rondb_standalone/sql_init_scripts
-{{ end }}
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
-{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
         - name: tls-certificates
           mountPath: /etc/tls
           readOnly: true
@@ -198,16 +225,16 @@ spec:
       - name: rondb-configs
         configMap:
           name: rondb-configs
+      - name: mysql-data-dir
+        emptyDir: {}
       - name: backup-scripts
         configMap:
           name: backup-scripts
           defaultMode: 0777
-{{ if .Values.mysql.sqlInitContent }}
-      - name: sql-init-script
+      - name: rclone-configs
         configMap:
-          name: sql-init-script
-{{ end }}
-{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+          name: rclone-configs
+{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
       # This will be created by the cert-manager via the Certificate CRD
       # The MySQLd will therefore not start until the certificate is available
       - name: tls-certificates
@@ -264,17 +291,6 @@ spec:
     port: {{ .Values.meta.mysqld.service.port }}
     targetPort: 3306
 ---
-{{ if .Values.mysql.sqlInitContent }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sql-init-script
-  namespace: {{ .Release.Namespace }}
-data:
-    init.sql: |
-{{ include "rondb.sqlInitContent" . | indent 6 }}
----
-{{ end }}
 {{ if not (eq .Values.clusterSize.minNumMySQLServers .Values.clusterSize.maxNumMySQLServers) }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -310,7 +326,7 @@ spec:
   duration: 2160h # 90d
   renewBefore: 360h # 15d
   dnsNames:
-    - {{ .Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ include "rondb.mysqldServiceHostname" . }}
     # TODO: this is not needed?
     - {{ .Values.meta.mysqld.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
@@ -318,3 +334,34 @@ spec:
     kind: Issuer
 ---
 {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "rondb.mysqldRole" . }}
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: [{{ include "rondb.mysqldSetupJobName" . }}]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "rondb.mysqldServiceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "rondb.mysqldRoleBinding" . }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "rondb.mysqldServiceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "rondb.mysqldRole" . }}
+  apiGroup: rbac.authorization.k8s.io

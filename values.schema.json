@@ -450,6 +450,58 @@
                 "type"
             ]
         },
+        "timeoutsMinutes": {
+            "type": "object",
+            "description": "Using minutes for easier template addition",
+            "properties": {
+                "singleSetupMySQLds": {
+                    "type": "integer",
+                    "description": "This includes the time to start a single MySQLd pod, restoring MySQL metadata and running user-defined MySQL init scripts.",
+                    "default": 5
+                },
+                "restoreNativeBackup": {
+                    "type": "integer",
+                    "description": "This does not include *downloading* the native backups. IMPORTANT; Restoring native backups is NOT done in parallel yet",
+                    "default": 30
+                }
+            },
+            "required": [
+                "singleSetupMySQLds",
+                "restoreNativeBackup"
+            ]
+        },
+        "restoreFromBackup": {
+            "type": "object",
+            "description": "Whether to restore a backup on the cluster",
+            "properties": {
+                "backupId": {
+                    "description": "The native backup ID for the backup to restore",
+                    "type": ["integer", "null"],
+                    "minimum" : 1
+                },
+                "objectStorageProvider": {
+                    "enum": [
+                        "s3"
+                    ],
+                    "default": "s3"
+                },
+                "excludeDatabases": {
+                    "description": "Which databases to exclude from the native backup",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "excludeTables": {
+                    "description": "Which tables to exclude from the native backup. Use the format: database.table",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": []
+        },
         "backups": {
             "type": "object",
             "description": "Whether, how and how often to run regular backups on the cluster",
@@ -474,7 +526,8 @@
         "images",
         "clusterSize",
         "resources",
-        "rondbConfig"
+        "rondbConfig",
+        "timeoutsMinutes"
     ],
     "$defs": {
         "secret": {

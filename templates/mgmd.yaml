@@ -52,11 +52,10 @@ spec:
             - /bin/bash
             - -c
             - ndb_mgm -e show
-
-          initialDelaySeconds: {{ int .Values.probes.initialDelaySeconds | default 5 }}
-          failureThreshold: {{ int .Values.probes.failureThreshold | default 3 }}
-          periodSeconds:  {{ int .Values.probes.periodSeconds | default 4 }}
-          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 2 }}
+          initialDelaySeconds: 5
+          failureThreshold: 3
+          periodSeconds: 4
+          timeoutSeconds: 2
         # Having a lively MGMd is crucial for other services' healthchecks.
         # Restarting MGMds does not cost much and should be quick.
         livenessProbe:
@@ -65,10 +64,10 @@ spec:
             - /bin/bash
             - -c
             - ndb_mgm -e show
-          initialDelaySeconds: {{ int .Values.probes.initialDelaySeconds | default 5 }}
-          failureThreshold: {{ int .Values.probes.failureThreshold | default 5 }}
-          periodSeconds:  {{ int .Values.probes.periodSeconds | default 5 }}
-          timeoutSeconds: {{ int .Values.probes.probeTimeoutSeconds | default 5 }}
+          initialDelaySeconds: 5
+          failureThreshold: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
         ports:
           - containerPort: 1186
         resources:

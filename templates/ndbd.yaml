@@ -13,7 +13,7 @@ spec:
   # data nodes to start at the same time.
   podManagementPolicy: Parallel
   replicas: {{ $.Values.clusterSize.activeDataReplicas }}
-{{ if lt ($.Values.clusterSize.activeDataReplicas | int) 2 }}
+{{- if lt ($.Values.clusterSize.activeDataReplicas | int) 2 }}
   # Don't kill a data node if we only have 1 replica.
   # Even when we start with 2 replicas and scale down to 1,
   # whilst also scaling our replicas vertically, K8s
@@ -25,7 +25,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       partition: 1
-{{ end }}
+{{- end }}
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
@@ -39,7 +39,7 @@ spec:
         name: rondb-ndbmtd
       spec:
         accessModes: [ReadWriteOnce]
-{{ include "rondb.storageClassName" $ | indent 8 }}
+{{- include "rondb.storageClassName" $ | indent 8 }}
         resources:
           requests:
 {{- $backupGiB := add
@@ -90,7 +90,7 @@ spec:
 {{- include "rondb.SecurityContext" $ | indent 6 }}
       affinity:
         podAntiAffinity:
-{{- if not $.Values.isMultiNodeCluster }}
+{{- if $.Values.isMultiNodeCluster }}
           # Must be on different nodes
           requiredDuringSchedulingIgnoredDuringExecution:
           # Replicas of same node group must be on different nodes
@@ -143,6 +143,57 @@ spec:
       {{- end  }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       initContainers:
+{{- if $.Values.restoreFromBackup.backupId }}
+      - name: download-backup-to-restore
+        image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
+        # Setting resources in order to be in QoS class Guaranteed
+        resources:
+          limits:
+{{- if $.Values.staticCpuManagerPolicy }}
+            # cpu *has to* be set to 1, otherwise the QoS class will be Burstable
+            cpu: 1
+{{- else }}
+            cpu: 0.2
+{{- end }}
+            memory: 200Mi
+        command:
+        - /bin/bash
+        - -c
+        - |
+{{ tpl ($.Files.Get "files/entrypoints/backup_download.sh") $ | indent 10 }}
+        env:
+        - name: NODE_GROUP
+          value: {{ $nodeGroup | quote }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: FILE_SYSTEM_PATH
+          value: /home/hopsworks/data/ndb_data
+        - name: BACKUP_ID
+          value: {{ $.Values.restoreFromBackup.backupId | quote }}
+{{- if eq $.Values.restoreFromBackup.objectStorageProvider "s3" }}
+        - name: ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.restoreFromBackup.s3.keyCredentialsSecret | nindent 14 }}
+        - name: SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+{{- toYaml $.Values.restoreFromBackup.s3.secretCredentialsSecret | nindent 14 }}
+{{- end }}
+        - name: RCLONE_MOUNT_FILEPATH
+          value: {{ include "rondb.rawRCloneConf" $ }}
+        # This will be read by rclone
+        - name: RCLONE_CONFIG
+          value: /home/hopsworks/rclone.conf
+        volumeMounts:
+        - name: rondb-ndbmtd
+          mountPath: /home/hopsworks/data
+        - name: rclone-configs
+          mountPath: {{ include "rondb.rawRCloneConf" $ }}
+          subPath: rclone.conf
+{{- end }}
       - name: mgmd-dependency-check
         image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
         imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
@@ -156,11 +207,9 @@ spec:
             cpu: 0.2
 {{- end }}
             memory: 200Mi
-          requests:
-            memory: 200Mi
         env:
         - name: MGMD_HOST
-          value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local
+          value: {{ include "rondb.mgmdHostname" $ }}
         - name: NODE_GROUP
           value: {{ $nodeGroup | quote }}
         - name: POD_NAME
@@ -222,9 +271,9 @@ spec:
             memory: {{ $.Values.resources.limits.memory.ndbmtdsMiB }}Mi
         env:
           - name: MGM_CONNECTION_STRING
-            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local:1186
+            value: {{ include "rondb.mgmdHostname" $ }}:1186
           - name: MGMD_HOST
-            value: {{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local
+            value: {{ include "rondb.mgmdHostname" $ }}
           - name: NODE_GROUP
             value: {{ $nodeGroup | quote }}
           - name: POD_NAME
@@ -241,10 +290,10 @@ spec:
             - |
 {{ include "rondb.nodeId" $ | indent 14 }}
               ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
-          initialDelaySeconds: {{ int $.Values.probes.initialDelaySeconds | default 15 }}
-          failureThreshold: {{ int $.Values.probes.failureThreshold | default 150 }}
-          periodSeconds:  {{ int $.Values.probes.periodSeconds | default 10 }}
-          timeoutSeconds: {{ int $.Values.probes.probeTimeoutSeconds | default 10 }}
+          initialDelaySeconds: 15
+          failureThreshold: 150
+          periodSeconds:  10
+          timeoutSeconds: 10
         # This has to account for a failing MGMd as well.
         # There is no point in killing the data node
         # if the MGMd is not up / ready.
@@ -264,10 +313,10 @@ spec:
               set -e
 {{ include "rondb.nodeId" $ | indent 14 }}
               ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
-          initialDelaySeconds: {{ int $.Values.probes.initialDelaySeconds | default 5 }}
-          failureThreshold: {{ int $.Values.probes.failureThreshold | default 10 }}
-          periodSeconds:  {{ int $.Values.probes.periodSeconds | default 10 }}
-          timeoutSeconds: {{ int $.Values.probes.probeTimeoutSeconds | default 10 }}
+          initialDelaySeconds: 5
+          failureThreshold: 10
+          periodSeconds:  10
+          timeoutSeconds: 10
         # Adding this reduces the likelihood of continuing with a
         # rolling update when something is off. We might not want
         # to restart the data node just yet, but we want to flash
@@ -282,10 +331,10 @@ spec:
             - |
 {{ include "rondb.nodeId" $ | indent 14 }}
               ./docker/rondb_standalone/healthcheck.sh $MGM_CONNECTION_STRING $NODE_ID
-          initialDelaySeconds: {{ int $.Values.probes.initialDelaySeconds | default 5 }}
-          failureThreshold: {{ int $.Values.probes.failureThreshold | default 3 }}
-          periodSeconds:  {{ int $.Values.probes.periodSeconds | default 5 }}
-          timeoutSeconds: {{ int $.Values.probes.probeTimeoutSeconds | default 5 }}
+          initialDelaySeconds: 5
+          failureThreshold: 3
+          periodSeconds:  5
+          timeoutSeconds: 5
         volumeMounts:
         - name: rondb-ndbmtd
           mountPath: /srv/hops/mysql-cluster/rondb
@@ -303,7 +352,7 @@ spec:
         - -c
         - |
           set -e
-{{ include "rondb.createRcloneConfig" . | indent 10 }}
+{{ include "rondb.createRcloneConfig" $ | indent 10 }}
           sleep infinity
         resources:
           # If not specified, requested resources are set to the limits.
@@ -328,20 +377,22 @@ spec:
 {{- toYaml $.Values.backups.s3.secretCredentialsSecret | nindent 14 }}
 {{- end }}
         - name: RCLONE_MOUNT_FILEPATH
-          value: &rawRCloneConf /home/hopsworks/rclone-raw.conf
+          value: {{ include "rondb.rawRCloneConf" $ }}
         # This will be read by rclone
         - name: RCLONE_CONFIG
           value: /home/hopsworks/rclone.conf
         volumeMounts:
         - name: rondb-ndbmtd
           mountPath: /home/hopsworks/data
-        - name: backup-configs
-          mountPath: *rawRCloneConf
+        - name: rclone-configs
+          mountPath: {{ include "rondb.rawRCloneConf" $ }}
           subPath: rclone.conf
+{{- end }}
+{{- if or $.Values.backups.enabled $.Values.restoreFromBackup.backupId }}
       volumes:
-      - name: backup-configs
+      - name: rclone-configs
         configMap:
-          name: backup-configs
+          name: rclone-configs
 {{- end }}
 ---
 apiVersion: v1

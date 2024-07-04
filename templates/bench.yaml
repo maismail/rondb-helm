@@ -124,9 +124,6 @@ metadata:
 spec:
 {{- include "rondb.SecurityContext" . | indent 2 }}
 {{- include "hopsworkslib.imagePullSecrets" . | indent 2 }}
-  metadata:
-    labels:
-      rondbService: benchmark-fetcher
   affinity:
     # We need to add this in the same node as benchs
     podAffinity:
