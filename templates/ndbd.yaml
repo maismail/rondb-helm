@@ -145,6 +145,7 @@ spec:
       initContainers:
       - name: mgmd-dependency-check
         image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
         # Setting resources in order to be in QoS class Guaranteed
         resources:
           limits:
@@ -205,6 +206,7 @@ spec:
       containers:
       - name: ndbmtd
         image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
         command:
         - /bin/bash
         - -c
@@ -295,6 +297,7 @@ spec:
 {{/* This container is used to receive calls to push backups to object storage */}}
       - name: rclone-listener
         image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
         command:
         - /bin/bash
         - -c

@@ -37,6 +37,7 @@ spec:
       containers:
       - name: mgmd
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
           - /bin/bash
           - -c

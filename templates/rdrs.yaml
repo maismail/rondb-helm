@@ -43,6 +43,7 @@ spec:
       initContainers:
       - name: datanode-dependency-check
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
         - /bin/bash
         - -c
@@ -61,6 +62,7 @@ spec:
       containers:
       - name: rdrs
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
           - /bin/bash
           - -c

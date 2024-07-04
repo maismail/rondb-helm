@@ -68,6 +68,7 @@ spec:
       initContainers:
       - name: datanode-dependency-check
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
         # Make sure data node has connected to MGMd
         - /bin/bash
@@ -87,6 +88,7 @@ spec:
       containers:
       - name: mysqld
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         command:
         - /bin/bash
         - -c

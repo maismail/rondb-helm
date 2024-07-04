@@ -83,6 +83,7 @@ storageClassName: {{  .Values.resources.requests.storage.dedicatedDiskColumnVolu
 {{- define "rondb.apiInitContainer" -}}
 - name: cluster-dependency-check
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+  imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
   command:
   - /bin/bash
   - -c
