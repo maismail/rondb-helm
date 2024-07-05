@@ -590,7 +590,7 @@
             "properties": {
                 "registry": {
                     "type": "string",
-                    "description": "Where image is hosted. Omit for local registry (E.g. use `minikube image load rondb-standalone:latest`)"
+                    "description": "Where image is hosted. Omit for local registry (E.g. use `minikube image load rondb:latest`)"
                 },
                 "repository": {
                     "type": "string"
