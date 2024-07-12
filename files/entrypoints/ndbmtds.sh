@@ -45,29 +45,32 @@ handle_sigterm() {
 # We'll stop the data node by deactivating it insetad of shutting it down
 trap handle_sigterm SIGTERM
 
+# Creating symlinks to the persistent volume
+BASE_DIR=/srv/hops/mysql-cluster
+RONDB_VOLUME=${BASE_DIR}/rondb
+{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups)
+{{ else }}
+RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups ndb_data_files)
+{{ end }}
+
+echo "[K8s Entrypoint ndbmtd] Creating symlinks to the persistent volume '$RONDB_VOLUME'"
+for dir in ${RONDB_DIRS[@]}
+do
+    # We can safely remove these directories, since the symlink is not part of the image
+    rm -rf ${BASE_DIR}/${dir}
+    mkdir -p ${RONDB_VOLUME}/${dir}
+    ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
+done
+
 INITIAL_START=
 # This is the first file that is read by the ndbmtd
+# WARNING: This env var needs to be aware of symlinks created here
 FIRST_FILE_READ=$FILE_SYSTEM_PATH/ndb_${NODE_ID}_fs/D1/DBDIH/P0.sysfile
 if [ ! -f "$FIRST_FILE_READ" ]
 then
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ does not exist - we'll do an initial start here"
-    INITIAL_START="--initial"
-
-    # Creating symlinks to the persistent volume
-    BASE_DIR=/srv/hops/mysql-cluster
-    RONDB_VOLUME=${BASE_DIR}/rondb
-{{ if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
-    RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups)
-{{ else }}
-    RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups ndb_data_files)
-{{ end }}
-    for dir in ${RONDB_DIRS[@]}
-    do
-        rm -rf ${BASE_DIR}/${dir}
-        mkdir -p ${RONDB_VOLUME}/${dir}
-        ln -s ${RONDB_VOLUME}/${dir} ${BASE_DIR}/${dir}
-    done
-    
+    INITIAL_START="--initial"    
 else
     echo "[K8s Entrypoint ndbmtd] The file $FIRST_FILE_READ exists - we have started the ndbmtds here before. No initial start is needed."
 fi

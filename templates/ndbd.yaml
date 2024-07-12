@@ -40,13 +40,22 @@ spec:
       spec:
         accessModes: [ReadWriteOnce]
 {{- include "rondb.storageClassName" $ | indent 8 }}
-        resources:
-          requests:
 {{- $backupGiB := add
     (div $.Values.resources.limits.memory.ndbmtdsMiB 1024)
     $.Values.resources.requests.storage.undoLogsGiB
 }}
-{{- if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+        resources:
+          requests:
+{{- if not $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+            storage: {{ add
+                $backupGiB
+                $.Values.resources.requests.storage.diskColumnGiB
+                $.Values.resources.requests.storage.redoLogGiB
+                $.Values.resources.requests.storage.undoLogsGiB
+                $.Values.resources.requests.storage.slackGiB
+                $.Values.resources.requests.storage.logGiB
+            }}Gi
+{{- else }}
             storage: {{ add
                 $backupGiB
                 $.Values.resources.requests.storage.redoLogGiB
@@ -64,15 +73,6 @@ spec:
             storage: {{ add
                 $.Values.resources.requests.storage.diskColumnGiB 
                 $.Values.resources.requests.storage.slackGiB
-            }}Gi
-{{- else }}
-            storage: {{ add
-                $backupGiB
-                $.Values.resources.requests.storage.diskColumnGiB
-                $.Values.resources.requests.storage.redoLogGiB
-                $.Values.resources.requests.storage.undoLogsGiB
-                $.Values.resources.requests.storage.slackGiB
-                $.Values.resources.requests.storage.logGiB
             }}Gi
 {{- end }}
   # Still in beta mode (Jan 2024)
