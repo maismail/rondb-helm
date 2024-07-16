@@ -10,6 +10,14 @@
 {{ .image.registry }}/{{ include "image_repository" (dict "image" .image ) }}{{ .image.name }}:{{ .image.tag }}
 {{- end -}}
 
+{{- define "rondb.toolboxImage" -}}
+{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.toolbox }}
+{{- include "hopsworkslib.toolboxImage" (dict "Values" .Values "default" .default) }}
+{{- else -}}
+{{ include "image_address" (dict "image" .Values.images.toolbox) }}
+{{- end -}}
+{{- end -}}
+
 {{- define "rondb.nodeId" -}}
 # Equivalent to replication factor of pod
 POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
