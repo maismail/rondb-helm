@@ -17,6 +17,10 @@ meta:
     headlessClusterIp:
       name: mysqld-cluster-ip
       port: 3306
+    loadBalancer:
+      enabled: false
+      loadBalancerClass: null
+      annotations: {}
   rdrs:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip

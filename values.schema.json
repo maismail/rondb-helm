@@ -86,6 +86,25 @@
                                 "name",
                                 "port"
                             ]
+                        },
+                        "loadBalancer":{
+                            "type": "object",
+                            "description": "Configuration for load balancer service to used for external access to MySQL",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "loadBalancerClass": {
+                                    "type": ["string", "null"],
+                                    "default": null,
+                                    "description": "Load balancer implmentation class"
+                                },
+                                "annotations":{
+                                    "type": "object",
+                                    "description": "Cloud provider load balancer specific annotations"
+                                }
+                            }
                         }
                     },
                     "required": [

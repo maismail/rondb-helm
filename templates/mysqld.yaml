@@ -365,3 +365,29 @@ roleRef:
   kind: Role
   name: {{ include "rondb.mysqldRole" . }}
   apiGroup: rbac.authorization.k8s.io
+{{- if .Values.meta.mysqld.loadBalancer.enabled }}
+---
+# A service for external access 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hopsworkslib.loadbalancer.mysqld.serviceName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+  annotations:
+    {{- range $k, $v := .Values.meta.mysqld.loadBalancer.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  type: LoadBalancer
+  {{- if .Values.meta.mysqld.loadBalancer.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.meta.mysqld.loadBalancer.loadBalancerClass }}
+  {{- end }}
+  selector:
+    rondbService: mysqld
+  ports:
+    - protocol: TCP
+      port: {{ .Values.meta.mysqld.service.port }}
+      targetPort: 3306
+{{- end }}
