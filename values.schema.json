@@ -105,6 +105,10 @@
                                     "description": "Cloud provider load balancer specific annotations"
                                 }
                             }
+                        },
+                        "credentialsSecretName": {
+                            "type": "string",
+                            "description": "Secret name for mysql users' passwords"
                         }
                     },
                     "required": [
@@ -163,9 +167,6 @@
             "type": "object",
             "description": "How to initialize MySQL",
             "properties": {
-                "rootCredentialsSecret": {
-                    "$ref": "#/$defs/secret"
-                },
                 "sqlInitContent": {
                     "type": "object",
                     "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
@@ -414,9 +415,6 @@
                 "mysqlUsername": {
                     "type": "string",
                     "description": "The MySQL user to run the benchmarks with. It will automatically be given the necessary privileges on the benchmark databases. This field is required so that benchmarking jobs can be enabled once the cluster is already running."
-                },
-                "credentialsSecret": {
-                    "$ref": "#/$defs/secret"
                 },
                 "type": {
                     "description": "Which benchmarking job to run. 'Multi' refers to multiple MySQLd servers to run against",

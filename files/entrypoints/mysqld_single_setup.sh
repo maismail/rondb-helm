@@ -104,6 +104,13 @@ else
     echo_newline '[K8s Entrypoint MySQLd] Not creating benchmark user. MYSQL_BENCH_USER and MYSQL_BENCH_PASSWORD must be specified to do so.'
 fi
 
+{{- if and .Values.global .Values.global._hopsworks }}
+####################################
+### SETUP HOPSWORKS ROOT USER ###
+####################################
+echo "{{ include "rondb.createHopsworksRootUser" . }}" | mysql 
+{{- end }}
+
 ##############################
 ### RUN CUSTOM SQL SCRIPTS ###
 ##############################

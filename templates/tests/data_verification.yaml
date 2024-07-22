@@ -41,7 +41,8 @@ spec:
         - name: MYSQL_BENCH_PASSWORD
           valueFrom:
             secretKeyRef:
-              {{- toYaml .Values.benchmarking.credentialsSecret | nindent 14 }}
+              key: {{ .Values.benchmarking.mysqlUsername }}
+              name: {{ include "rondb.mysql.usersSecretName" . }}
       volumeMounts:
       - name: mysql-client-configs
         mountPath: {{ $utilsDir }}

@@ -59,9 +59,7 @@ mysql:
       -- Save user in RonDB (to access them on any MySQLd)
       GRANT NDB_STORED_USER ON *.* TO 'bench'@'%';
       FLUSH PRIVILEGES;
-  rootCredentialsSecret:
-    name: "mysql-passwords"
-    key: "root"
+  credentialsSecretName: "mysql-passwords"
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1
@@ -132,9 +130,6 @@ timeoutsMinutes:
 benchmarking:
   enabled: false
   mysqlUsername: "bench"
-  credentialsSecret:
-    name: "mysql-passwords"
-    key: "bench"
   type: "sysbench"
   dbt2:
     numWarehouses: 4

@@ -26,29 +26,9 @@ NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
 {{- end -}}
 
 {{/*
-- Create the main Hopsworks user
 - Run all custom SQL init files
 */}}
 {{- define "rondb.sqlInitContent" -}}
-{{- if and 
-    .Values.global
-    .Values.global._hopsworks
-    .Values.global._hopsworks.mysql.user
-    .Values.global._hopsworks.mysql.password
-    .Values.global._hopsworks.mysql.grant_on_host
-}}
-    CREATE USER IF NOT EXISTS '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}'
-        IDENTIFIED WITH mysql_native_password
-        BY '{{ .Values.global._hopsworks.mysql.password }}';
-    GRANT ALL PRIVILEGES ON *.*
-        TO '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}'
-        WITH GRANT OPTION;
-    -- Save user in RonDB (to access them on any MySQLd)
-    GRANT NDB_STORED_USER ON *.*
-        TO '{{ .Values.global._hopsworks.mysql.user }}'@'{{ .Values.global._hopsworks.mysql.grant_on_host }}';
-    FLUSH PRIVILEGES;
-{{- end }}
-
 {{- range $k, $v := .Values.mysql.sqlInitContent }}
 {{ $v | indent 4 }}
 {{- end }}
@@ -117,7 +97,8 @@ storageClassName: {{  .Values.resources.requests.storage.dedicatedDiskColumnVolu
   - name: MYSQL_BENCH_PASSWORD
     valueFrom:
       secretKeyRef:
-        {{- toYaml .Values.benchmarking.credentialsSecret | nindent 8 }}
+        key: {{ .Values.benchmarking.mysqlUsername }}
+        name: {{ include "rondb.mysql.usersSecretName" . }}
 {{- end }}
 
 {{- define "rondb.createRcloneConfig" -}}
@@ -250,3 +231,25 @@ done
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+- Create Hopsworks root user
+*/}}
+{{- define "rondb.createHopsworksRootUser" -}}
+{{- if and .Values.global .Values.global._hopsworks }}
+{{ $grantOnHost := "%" }}
+CREATE USER IF NOT EXISTS '{{ include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'{{ $grantOnHost }}' IDENTIFIED WITH mysql_native_password BY '$MYSQL_HOPSWORKS_ROOT_PASSWORD';
+GRANT ALL PRIVILEGES ON *.* TO '{{ include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'{{ $grantOnHost }}' WITH GRANT OPTION;
+GRANT NDB_STORED_USER ON *.*TO '{{include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'{{ $grantOnHost }}';
+FLUSH PRIVILEGES;
+{{- end }}
+{{- end -}}
+
+
+{{- define "rondb.mysql.usersSecretName" -}}
+{{- if and .Values.global .Values.global._hopsworks -}}
+{{ include "hopsworkslib.mysql.usersSecretName" . }}
+{{- else -}}
+{{ .Values.mysql.credentialsSecretName }}
+{{- end -}}
+{{- end -}}
