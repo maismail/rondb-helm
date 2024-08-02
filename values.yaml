@@ -40,7 +40,7 @@ images:
     registry: docker.io
     repository: hopsworks
     name: hwutils
-    tag: "0.3"
+    tag: "0.4"
   dataValidation:
     registry: docker.io
     repository: ""
