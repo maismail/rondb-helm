@@ -20,6 +20,9 @@ spec:
 {{- end }}
 {{- include "rondb.SecurityContext" $ | indent 6 }}
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+      {{ if .Values.priorityClass -}}
+      priorityClassName: {{ .Values.priorityClass | quote }}
+      {{- end  }}
       initContainers:
 {{- if .Values.restoreFromBackup.backupId }}
       - name: download-mysql-metadata
