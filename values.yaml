@@ -17,14 +17,20 @@ meta:
     headlessClusterIp:
       name: mysqld-cluster-ip
       port: 3306
-    loadBalancer:
+    externalLoadBalancer:
       enabled: false
-      loadBalancerClass: null
+      class: null
       annotations: {}
   rdrs:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
     statefulSetName: rdrs
+    annotations:
+      consul.hashicorp.com/service-name: rdrs
+    externalLoadBalancer:
+      enabled: false
+      class: null
+      annotations: {}
 staticCpuManagerPolicy: false
 isMultiNodeCluster: false
 terminationGracePeriodSeconds: 60

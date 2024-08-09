@@ -1,16 +1,23 @@
 {
-    "Internal": {
-        "APIVersion": "0.1.0"
-    },
     "REST": {
+        "Enable": true,
         "ServerIP": "0.0.0.0",
         "ServerPort": 4406
     },
     "GRPC": {
+        "Enable": true,
         "ServerIP": "0.0.0.0",
         "ServerPort": 5406
     },
     "RonDB": {
+        "Mgmds": [
+            {
+                "IP": {{ include "rondb.mgmdHostname" . | quote }},
+                "Port": 1186
+            }
+        ]
+    },
+    "RonDBMetadataCluster": {
         "Mgmds": [
             {
                 "IP": {{ include "rondb.mgmdHostname" . | quote }},
@@ -45,7 +52,7 @@
             "RequireAndVerifyClientCert": false
         },
         "APIKey": {
-            "UseHopsworksAPIKeys": false
+            "UseHopsworksAPIKeys": true
         }
     },
     "Log": {

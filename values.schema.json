@@ -87,24 +87,8 @@
                                 "port"
                             ]
                         },
-                        "loadBalancer":{
-                            "type": "object",
-                            "description": "Configuration for load balancer service to used for external access to MySQL",
-                            "properties": {
-                                "enabled": {
-                                    "type": "boolean",
-                                    "default": false
-                                },
-                                "loadBalancerClass": {
-                                    "type": ["string", "null"],
-                                    "default": null,
-                                    "description": "Load balancer implmentation class"
-                                },
-                                "annotations":{
-                                    "type": "object",
-                                    "description": "Cloud provider load balancer specific annotations"
-                                }
-                            }
+                        "externalLoadBalancer": {
+                            "$ref": "#/$defs/externalLoadBalancer"
                         },
                         "credentialsSecretName": {
                             "type": "string",
@@ -128,6 +112,9 @@
                         },
                         "headlessClusterIpName": {
                             "type": "string"
+                        },
+                        "externalLoadBalancer": {
+                            "$ref": "#/$defs/externalLoadBalancer"
                         }
                     },
                     "required": [
@@ -617,6 +604,26 @@
                 },
                 "tag": {
                     "type": "string"
+                }
+            }
+        },
+        "externalLoadBalancer":{
+            "type": "object",
+            "description": "Configuration for load balancer service to be used for external access to RDRS. ",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enabled if this flag is true or if global._hopsworks.externalLoadBalancers.enabled is true"
+                },
+                "class": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Load balancer implmentation class. If not defined, we fallback to global._hopsworks.externalLoadBalancers.class if defined. "
+                },
+                "annotations":{
+                    "type": "object",
+                    "description": "Cloud provider load balancer specific annotations. We merge it with the global._hopsworks.externalLoadBalancers.annotations if defined. "
                 }
             }
         }
