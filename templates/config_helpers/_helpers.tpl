@@ -45,18 +45,18 @@ securityContext:
 {{- end }}
 
 {{- define "rondb.storageClassName" -}}
-{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
-storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
-{{- else if .Values.resources.requests.storage.storageClassName -}}
+{{- if .Values.resources.requests.storage.storageClassName -}}
 storageClassName: {{  .Values.resources.requests.storage.storageClassName | quote }}
+{{- else if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
+storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
 {{- end -}}
 {{- end -}}
 
 {{- define "rondb.diskColumn.storageClassName" -}}
-{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
-storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
-{{- else if .Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName -}}
+{{- if .Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName -}}
 storageClassName: {{  .Values.resources.requests.storage.dedicatedDiskColumnVolume.storageClassName | quote }}
+{{- else if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName -}}
+storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
 {{- end -}}
 {{- end -}}
 

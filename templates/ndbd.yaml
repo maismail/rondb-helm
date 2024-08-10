@@ -39,7 +39,7 @@ spec:
         name: rondb-ndbmtd
       spec:
         accessModes: [ReadWriteOnce]
-{{- include "rondb.storageClassName" $ | indent 8 }}
+{{ include "rondb.storageClassName" $ | indent 8 }}
 {{- $backupGiB := add
     (div $.Values.resources.limits.memory.ndbmtdsMiB 1024)
     $.Values.resources.requests.storage.undoLogsGiB
