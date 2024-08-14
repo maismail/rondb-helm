@@ -52,7 +52,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
   - /bin/bash
   - -c
   - |
-{{ tpl (.Files.Get "files/entrypoints/wait_ndbmtds.sh") . | indent 4 }}
+{{ tpl (.Files.Get "files/scripts/wait_ndbmtds.sh") . | indent 4 }}
   env:
   - name: MGMD_HOSTNAME
     value: {{ include "rondb.mgmdHostname" . }}
@@ -70,7 +70,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
   - /bin/bash
   - -c
   - |
-{{ tpl (.Files.Get "files/entrypoints/apis.sh") . | indent 4 }}
+{{ tpl (.Files.Get "files/scripts/apis.sh") . | indent 4 }}
   env:
   - name: MGMD_HOSTNAME
     value: {{ include "rondb.mgmdHostname" . }}

@@ -160,7 +160,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ tpl ($.Files.Get "files/entrypoints/backup_download.sh") $ | indent 10 }}
+{{ tpl ($.Files.Get "files/scripts/backups/native_download.sh") $ | indent 10 }}
         env:
         - name: NODE_GROUP
           value: {{ $nodeGroup | quote }}
@@ -260,7 +260,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ tpl ($.Files.Get "files/entrypoints/ndbmtds.sh") $ | indent 10 }}
+{{ tpl ($.Files.Get "files/scripts/ndbmtds.sh") $ | indent 10 }}
         ports:
           - containerPort: 11860
         resources:

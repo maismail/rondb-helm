@@ -161,13 +161,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
     autobench_sysbench.conf: |
-{{ tpl (.Files.Get "files/autobench_sysbench.conf") . | indent 8 }}
+{{ tpl (.Files.Get "files/configs/autobench_sysbench.conf") . | indent 8 }}
     autobench_dbt2.conf: |
-{{ tpl (.Files.Get "files/autobench_dbt2.conf") . | indent 8 }}
+{{ tpl (.Files.Get "files/configs/autobench_dbt2.conf") . | indent 8 }}
 
     dbt2_single_run.conf: |
-{{ tpl (.Files.Get "files/dbt2_single_run.conf") . | indent 8 }}
+{{ $.Values.benchmarking.dbt2.runSingle | indent 8}}
     dbt2_multi_run.conf: |
-{{ tpl (.Files.Get "files/dbt2_multi_run.conf") . | indent 8 }}
+{{ $.Values.benchmarking.dbt2.runMulti | indent 8 }}
 
 {{- end -}}

@@ -42,7 +42,7 @@ spec:
           - /bin/bash
           - -c
           - |
-{{ tpl (.Files.Get "files/entrypoints/mgmds.sh") . | indent 12 }}
+{{ tpl (.Files.Get "files/scripts/mgmds.sh") . | indent 12 }}
         # MGMDs have publishNotReadyAddresses set to false.
         # Adding a readiness probe will therefore have a direct
         # effect on whether other services can reach the MGMd.
@@ -80,15 +80,24 @@ spec:
         env:
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
-        - name: rondb-configs
+        - name: mgmd-configs
           mountPath: /srv/hops/mysql-cluster/config.ini
           subPath: config.ini
         - name: rondb-mgmd
           mountPath: /srv/hops/mysql-cluster/rondb
       volumes:
-      - name: rondb-configs
+      - name: mgmd-configs
         configMap:
-          name: rondb-configs
+          name: mgmd-configs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mgmd-configs
+  namespace: {{ .Release.Namespace }}
+data:
+    config.ini: |
+{{ tpl (.Files.Get "files/configs/config.ini") . | indent 8 }}
 ---
 apiVersion: v1
 kind: Service

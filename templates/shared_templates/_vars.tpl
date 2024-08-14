@@ -7,7 +7,11 @@ backupRemote
 {{- end -}}
 
 {{- define "rondb.mgmdHostname" -}}
-{{ $.Values.meta.mgmd.statefulSetName }}-0.{{ $.Values.meta.mgmd.headlessClusterIp.name }}.{{ $.Release.Namespace }}.svc.cluster.local
+{{ printf "%s-0.%s.%s.svc.cluster.local"
+        $.Values.meta.mgmd.statefulSetName
+        $.Values.meta.mgmd.headlessClusterIp.name
+        $.Release.Namespace
+}}
 {{- end -}}
 
 {{- define "rondb.mysqldPodname" -}}
@@ -15,7 +19,10 @@ backupRemote
 {{- end -}}
 
 {{- define "rondb.mysqldServiceHostname" -}}
-{{ $.Values.meta.mysqld.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+{{ printf "%s.%s.svc.cluster.local"
+        $.Values.meta.mysqld.service.name
+        $.Release.Namespace
+}}
 {{- end -}}
 
 {{- define "rondb.rawRCloneConf" -}}

@@ -105,7 +105,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ tpl (.Files.Get "files/entrypoints/mysqld_init.sh") . | indent 10 }}
+{{ tpl (.Files.Get "files/scripts/mysqld_init.sh") . | indent 10 }}
         # TODO: Try to move over the created my.cnf file to the main container
         env:
           # This is actually already baked into the image
@@ -215,8 +215,8 @@ spec:
         - name: mysql-data-dir
           mountPath: {{ include "rondb.mysqldDataDir" . }}
         - name: mysqld-configs
-          mountPath: /srv/hops/mysql-cluster/backup_metadata.sh
-          subPath: backup_metadata.sh
+          mountPath: /srv/hops/mysql-cluster/metadata_create.sh
+          subPath: metadata_create.sh
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.

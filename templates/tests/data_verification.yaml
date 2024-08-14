@@ -46,15 +46,15 @@ spec:
       volumeMounts:
       - name: mysql-client-configs
         mountPath: {{ $utilsDir }}
-      - name: sql-scripts
+      - name: sql-test-scripts
         mountPath: {{ $scriptsDir }}
   volumes:
   - name: mysql-client-configs
     configMap:
       name: mysql-client-configs
-  - name: sql-scripts
+  - name: sql-test-scripts
     configMap:
-      name: sql-scripts
+      name: sql-test-scripts
 {{- end -}}
 
 {{ include "rondb.dataPod" (merge (dict 
@@ -81,7 +81,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sql-scripts
+  name: sql-test-scripts
   namespace: {{ .Release.Namespace }}
 data:
 {{- (.Files.Glob "files/testing/sql_tables/**.sql").AsConfig | nindent 2 }}

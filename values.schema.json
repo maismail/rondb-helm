@@ -482,8 +482,11 @@
             "properties": {
                 "backupId": {
                     "description": "The native backup ID for the backup to restore",
-                    "type": ["integer", "null"],
-                    "minimum" : 1
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 1
                 },
                 "objectStorageProvider": {
                     "enum": [
@@ -609,7 +612,7 @@
                 }
             }
         },
-        "externalLoadBalancer":{
+        "externalLoadBalancer": {
             "type": "object",
             "description": "Configuration for load balancer service to be used for external access to RDRS. ",
             "properties": {
@@ -619,11 +622,14 @@
                     "description": "Enabled if this flag is true or if global._hopsworks.externalLoadBalancers.enabled is true"
                 },
                 "class": {
-                    "type": ["string", "null"],
+                    "type": [
+                        "string",
+                        "null"
+                    ],
                     "default": null,
                     "description": "Load balancer implmentation class. If not defined, we fallback to global._hopsworks.externalLoadBalancers.class if defined. "
                 },
-                "annotations":{
+                "annotations": {
                     "type": "object",
                     "description": "Cloud provider load balancer specific annotations. We merge it with the global._hopsworks.externalLoadBalancers.annotations if defined. "
                 }

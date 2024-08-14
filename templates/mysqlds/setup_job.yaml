@@ -119,7 +119,7 @@ spec:
         - /bin/bash
         - -c
         - |
-{{ tpl (.Files.Get "files/entrypoints/mysqld_single_setup.sh") . | indent 10 }}
+{{ tpl (.Files.Get "files/scripts/mysqld_single_setup.sh") . | indent 10 }}
         volumeMounts:
         - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file

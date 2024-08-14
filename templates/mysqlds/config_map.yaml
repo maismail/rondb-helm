@@ -5,6 +5,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
     my.cnf: |
-{{ tpl (.Files.Get "files/my.cnf") . | indent 8 }}
-    backup_metadata.sh: |
-{{ tpl (.Files.Get "files/backup_metadata.sh") . | indent 8 }}
+{{ tpl (.Files.Get "files/configs/my.cnf") . | indent 8 }}
+    metadata_create.sh: |
+{{ tpl (.Files.Get "files/scripts/backups/metadata_create.sh") . | indent 8 }}

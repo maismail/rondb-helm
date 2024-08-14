@@ -23,7 +23,7 @@ spec:
             - /bin/bash
             - -c
             - |
-{{ tpl (.Files.Get "files/backup_metadata_kubectl.sh") . | indent 14 }}
+{{ tpl (.Files.Get "files/scripts/backups/metadata_upload_kubectl.sh") . | indent 14 }}
             env:
             - name: JOB_NAME
               valueFrom:
@@ -83,7 +83,7 @@ spec:
             - /bin/bash
             - -c
             - |
-{{ tpl (.Files.Get "files/entrypoints/backup_upload.sh") . | indent 14 }}
+{{ tpl (.Files.Get "files/scripts/backups/native_upload_kubectl.sh") . | indent 14 }}
             env:
             - name: JOB_NAME
               valueFrom:

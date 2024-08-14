@@ -160,7 +160,7 @@ kubectl create secret generic aws-credentials \
 # Install and/or upgrade:
 helm upgrade -i my-rondb \
     --namespace=$RONDB_NAMESPACE \
-    --values ./values.minikube.small.yaml .
+    --values ./values/minikube/small.yaml .
 ```
 
 ## Run tests
@@ -184,8 +184,8 @@ Whilst the `size` in `minikube.<size>.yaml` determines the cluster power, it doe
 ```bash
 helm upgrade -i my-rondb \
     --namespace=$RONDB_NAMESPACE \
-    --values ./values.minikube.small.yaml \
-    --values ./values.benchmark.yaml .
+    --values ./values/minikube/small.yaml \
+    --values ./values/benchmark.yaml .
 ```
 
 ## Teardown
@@ -205,7 +205,7 @@ kubectl delete pvc --all
 
 ## Minikube Values files
 
-The `minikube.values.yaml` files are for single-machine configurations. Use other values for production settings.
+The `values/minikube/*.yaml` files are for single-machine configurations. Use other values for production settings.
 
 - **mini**: 
   - Cluster setup: 1 MGM server, 1 data node, 1 MySQL server and 1 API node
@@ -254,7 +254,7 @@ minikube start \
 
 Using:
 - Minikube on Mac M1 Pro: `minikube start --driver=docker --cpus 10 --memory 20000`
-- For "power" of cluster: `values.minikube.small.yaml`
+- For "power" of cluster: `values/minikube/small.yaml`
 
 #### Cluster size: 1 MySQLd, 1 data node, max 370%
 
@@ -332,7 +332,7 @@ Using:
         --extra-config=kubelet.kube-reserved="cpu=500m"
     ```
 - .Values.staticCpuManagerPolicy=true
-- For "power" of cluster: `values.minikube.small.yaml`
+- For "power" of cluster: `values/minikube/small.yaml`
 
 ### 2 MySQLds, 1 data node, 1 bench, max 970%
 

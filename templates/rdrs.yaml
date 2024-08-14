@@ -103,7 +103,7 @@ spec:
                 fieldPath: metadata.name
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
-        - name: rondb-configs
+        - name: rdrs-configs
           mountPath: /srv/hops/mysql-cluster/rest_api.json
           subPath: rest_api.json
 {{- if and (.Values.tls.endToEnd.enabled)
@@ -137,9 +137,18 @@ spec:
           optional: false
     {{- end }}
 {{- end }}
-      - name: rondb-configs
+      - name: rdrs-configs
         configMap:
-          name: rondb-configs
+          name: rdrs-configs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rdrs-configs
+  namespace: {{ .Release.Namespace }}
+data:
+    rest_api.json: |
+{{ tpl (.Files.Get "files/configs/rest_api.json") . | indent 8 }}
 ---
 apiVersion: v1
 kind: Service
