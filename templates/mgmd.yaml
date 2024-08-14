@@ -15,7 +15,7 @@ spec:
         name: rondb-mgmd
       spec:
         accessModes: [ReadWriteOnce]
-{{ include "rondb.storageClassName" . | indent 8 }}
+{{ include "rondb.storageClass.default" . | indent 8 }}
         resources:
           requests:
             storage: 30Mi

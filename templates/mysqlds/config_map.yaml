@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqld-configs
+  namespace: {{ .Release.Namespace }}
+data:
+    my.cnf: |
+{{ tpl (.Files.Get "files/my.cnf") . | indent 8 }}
+    backup_metadata.sh: |
+{{ tpl (.Files.Get "files/backup_metadata.sh") . | indent 8 }}

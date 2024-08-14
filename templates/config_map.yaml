@@ -6,7 +6,5 @@ metadata:
 data:
     config.ini: |
 {{ tpl (.Files.Get "files/config.ini") . | indent 8 }}
-    my.cnf: |
-{{ tpl (.Files.Get "files/my.cnf") . | indent 8 }}
     rest_api.json: |
 {{ tpl (.Files.Get "files/rest_api.json") . | indent 8 }}

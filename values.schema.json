@@ -229,25 +229,27 @@
                         },
                         "storage": {
                             "type": "object",
-                            "description": "Volume sizes",
+                            "description": "Volume specifications",
                             "properties": {
-                                "storageClassName":{
-                                    "type": ["string", "null"],
-                                    "default": null,
-                                    "description": "Storage class name to request for volumes attached to the management and the data nodes."
-                                },
-                                "dedicatedDiskColumnVolume":{
+                                "classes": {
                                     "type": "object",
+                                    "description": "Storage classes",
                                     "properties": {
-                                        "enabled":{
-                                            "type": "boolean",
-                                            "default": false,
-                                            "description": "Whether to use a dedicated volume only for on disk columns or not."
-                                        },
-                                        "storageClassName":{
-                                            "type": ["string", "null"],
+                                        "default": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
                                             "default": null,
-                                            "description": "Storage class name to request for the disk columns volume."
+                                            "description": "Default storage class name for all volumes"
+                                        },
+                                        "diskColumns": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "default": null,
+                                            "description": "Storage class name for the data node disk columns volume"
                                         }
                                     }
                                 },

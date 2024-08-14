@@ -10,6 +10,10 @@ mkdir -p $BACKUP_DIR
 MYSQL_AUTH="--user=root \
             -p${MYSQL_ROOT_PASSWORD}"
 
+####################
+### BACKUP USERS ###
+####################
+
 # Backup users; match all database names
 mysqlpump \
     $MYSQL_AUTH \
@@ -17,6 +21,10 @@ mysqlpump \
     --exclude-users=root,mysql.sys,mysql.session,mysql.infoschema \
     --users \
     >$BACKUP_DIR/users.sql
+
+########################
+### BACKUP DATABASES ###
+########################
 
 # Get all databases
 BACKUP_BLACKLIST_DATABASES=('mysql' 'information_schema' 'performance_schema' 'sys' 'ndbinfo' 'users')

@@ -171,9 +171,9 @@ metadata:
   name: {{ .Values.meta.rdrs.serviceName }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    {{- range $k, $v := .Values.meta.rdrs.annotations }}
-    {{ $k }}: {{ $v | quote }}
-    {{- end }}
+{{- range $k, $v := .Values.meta.rdrs.annotations }}
+{{ $k | indent 4 }}: {{ $v | quote }}
+{{- end }}
 spec:
   type: ClusterIP
   selector:
@@ -259,20 +259,20 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
   annotations:
-    {{- $annotations := .Values.meta.rdrs.externalLoadBalancer.annotations }}
-    {{- if $globalLB }}
+{{- $annotations := .Values.meta.rdrs.externalLoadBalancer.annotations }}
+{{- if $globalLB }}
     {{- $annotations = merge $annotations .Values.global._hopsworks.externalLoadBalancers.annotations}}
-    {{- end }}
-    {{- range $k, $v := $annotations }}
-    {{ $k }}: {{ $v | quote }}
-    {{- end }}
+{{- end }}
+{{- range $k, $v := $annotations }}
+{{ $k | indent 4 }}: {{ $v | quote }}
+{{- end }}
 spec:
   type: LoadBalancer
-  {{- if .Values.meta.rdrs.externalLoadBalancer.class }}
+{{- if .Values.meta.rdrs.externalLoadBalancer.class }}
   loadBalancerClass: {{ .Values.meta.rdrs.externalLoadBalancer.class }}
-  {{- else if and $globalLB .Values.global._hopsworks.externalLoadBalancers.class }}
+{{- else if and $globalLB .Values.global._hopsworks.externalLoadBalancers.class }}
   loadBalancerClass: {{ .Values.global._hopsworks.externalLoadBalancers.class }}
-  {{- end }}
+{{- end }}
   selector:
     rondbService: rdrs
   ports:

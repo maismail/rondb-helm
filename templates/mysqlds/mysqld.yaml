@@ -24,19 +24,21 @@ spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       serviceAccountName: {{ include "rondb.mysqldServiceAccountName" . }}
       affinity:
-        nodeAffinity:
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # Try to evenly distribute MySQLds between node groups for low latency
+          # Try to place MySQLds onto hosts with data nodes running for low latency
           # Risk: Some node groups may receive more MySQLds than others
           - weight: 90
-            preference:
-              matchExpressions:
-              - key: nodeGroup
-                operator: In
-                values:
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: nodeGroup
+                  operator: In
+                  values:
 {{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
-                - {{ $nodeGroup | quote }}
+                  - {{ $nodeGroup | quote }}
 {{ end }}
+              topologyKey: kubernetes.io/hostname
         # We want the placement of MySQLds be primarily based on the node groups.
         # The anti-affinities are in place to ensure that the MySQLds are at least
         # spread between node group *replicas*. The risk remains of MySQLds being
@@ -64,9 +66,9 @@ spec:
                   - mysqld
               topologyKey: topology.kubernetes.io/zone
 {{- include "rondb.SecurityContext" . | indent 6 }}
-      {{ if .Values.priorityClass -}}
+{{- if .Values.priorityClass }}
       priorityClassName: {{ .Values.priorityClass | quote }}
-      {{- end  }}
+{{- end  }}
       initContainers:
 {{/*
     Always wait for data nodes first so that timeouts are more accurate. Downloading
@@ -116,7 +118,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
         volumeMounts:
-        - name: rondb-configs
+        - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
           mountPath: /srv/hops/mysql-cluster/my-raw.cnf
           subPath: my.cnf
@@ -206,13 +208,13 @@ spec:
               - SYS_NICE
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
-        - name: rondb-configs
+        - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
           mountPath: /srv/hops/mysql-cluster/my-raw.cnf
           subPath: my.cnf
         - name: mysql-data-dir
           mountPath: {{ include "rondb.mysqldDataDir" . }}
-        - name: backup-scripts
+        - name: mysqld-configs
           mountPath: /srv/hops/mysql-cluster/backup_metadata.sh
           subPath: backup_metadata.sh
       # StatefulSets work with PVCs to create a dedicated persistent volume for
@@ -224,15 +226,12 @@ spec:
           readOnly: true
 {{- end }}
       volumes:
-      - name: rondb-configs
+      - name: mysqld-configs
         configMap:
-          name: rondb-configs
+          name: mysqld-configs
+          defaultMode: 0777
       - name: mysql-data-dir
         emptyDir: {}
-      - name: backup-scripts
-        configMap:
-          name: backup-scripts
-          defaultMode: 0777
       - name: rclone-configs
         configMap:
           name: rclone-configs
@@ -244,15 +243,6 @@ spec:
           secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
           optional: false
 {{- end }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: backup-scripts
-  namespace: {{ .Release.Namespace }}
-data:
-    backup_metadata.sh: |
-{{ tpl (.Files.Get "files/backup_metadata.sh") . | indent 6 }}
 ---
 apiVersion: v1
 kind: Service
@@ -337,6 +327,10 @@ spec:
 ---
 {{ end }}
 ---
+{{/*
+    These are the permissions to allow the Job to wait for the restore-backup
+    Job to have completed.
+*/}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -379,20 +373,20 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
   annotations:
-    {{- $annotations := .Values.meta.mysqld.externalLoadBalancer.annotations }}
-    {{- if $globalLB }}
+{{- $annotations := .Values.meta.mysqld.externalLoadBalancer.annotations }}
+{{- if $globalLB }}
     {{- $annotations = merge $annotations .Values.global._hopsworks.externalLoadBalancers.annotations}}
-    {{- end }}
-    {{- range $k, $v := $annotations }}
+{{- end }}
+{{- range $k, $v := $annotations }}
     {{ $k }}: {{ $v | quote }}
-    {{- end }}
+{{- end }}
 spec:
   type: LoadBalancer
-  {{- if .Values.meta.mysqld.externalLoadBalancer.class }}
+{{- if .Values.meta.mysqld.externalLoadBalancer.class }}
   loadBalancerClass: {{ .Values.meta.mysqld.externalLoadBalancer.class }}
-  {{- else if and $globalLB .Values.global._hopsworks.externalLoadBalancers.class }}
+{{- else if and $globalLB .Values.global._hopsworks.externalLoadBalancers.class }}
   loadBalancerClass: {{ .Values.global._hopsworks.externalLoadBalancers.class }}
-  {{- end }}
+{{- end }}
   selector:
     rondbService: mysqld
   ports:

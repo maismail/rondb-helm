@@ -121,7 +121,7 @@ spec:
         - |
 {{ tpl (.Files.Get "files/entrypoints/mysqld_single_setup.sh") . | indent 10 }}
         volumeMounts:
-        - name: rondb-configs
+        - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
           mountPath: /srv/hops/mysql-cluster/my-raw.cnf
           subPath: my.cnf
@@ -163,9 +163,9 @@ spec:
             cpu: {{ .Values.resources.requests.cpus.mysqlds }}
             memory: {{ .Values.resources.requests.memory.mysqldMiB }}Mi
       volumes:
-      - name: rondb-configs
+      - name: mysqld-configs
         configMap:
-          name: rondb-configs
+          name: mysqld-configs
 {{- if .Values.restoreFromBackup.backupId }}
       - name: rclone-configs
         configMap:
@@ -193,6 +193,10 @@ data:
 {{ include "rondb.sqlInitContent" . | indent 6 }}
 ---
 {{ end }}
+{{/*
+    These are the permissions to allow the Job to wait for the restore-backup
+    Job to have completed.
+*/}}
 {{- if .Values.restoreFromBackup.backupId }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

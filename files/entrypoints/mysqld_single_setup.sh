@@ -73,9 +73,9 @@ function mysql() { command mysql -uroot -hlocalhost --password="$DUMMY_ROOT_PASS
 
 echo_newline '[K8s Entrypoint MySQLd] Changing the root user password'
 mysql <<EOF
-    ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
-    GRANT NDB_STORED_USER ON *.* TO 'root'@'localhost';
-    FLUSH PRIVILEGES;
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+GRANT NDB_STORED_USER ON *.* TO 'root'@'localhost';
+FLUSH PRIVILEGES;
 EOF
 
 DUMMY_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
@@ -85,21 +85,25 @@ DUMMY_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
 ####################################
 
 # Benchmarking table; all other tables will be created by the benchmakrs themselves
-echo "CREATE DATABASE IF NOT EXISTS \`dbt2\` ;" | mysql
-echo "CREATE DATABASE IF NOT EXISTS \`ycsb\` ;" | mysql
+mysql <<EOF
+CREATE DATABASE IF NOT EXISTS \`dbt2\`;
+CREATE DATABASE IF NOT EXISTS \`ycsb\`;
+EOF
 
 # shellcheck disable=SC2153
 if [ "$MYSQL_BENCH_USER" ]; then
     echo_newline "[K8s Entrypoint MySQLd] Initializing benchmarking user $MYSQL_BENCH_USER"
 
-    echo "CREATE USER IF NOT EXISTS '$MYSQL_BENCH_USER'@'%' IDENTIFIED BY '$MYSQL_BENCH_PASSWORD' ;" | mysql
+        mysql <<EOF
+CREATE USER IF NOT EXISTS '${MYSQL_BENCH_USER}'@'%' IDENTIFIED BY '${MYSQL_BENCH_PASSWORD}';
 
-    # Grant MYSQL_BENCH_USER rights to all benchmarking databases
-    echo "GRANT NDB_STORED_USER ON *.* TO '$MYSQL_BENCH_USER'@'%' ;" | mysql
-    echo "GRANT ALL PRIVILEGES ON \`sysbench%\`.* TO '$MYSQL_BENCH_USER'@'%' ;" | mysql
-    echo "GRANT ALL PRIVILEGES ON \`dbt%\`.* TO '$MYSQL_BENCH_USER'@'%' ;" | mysql
-    echo "GRANT ALL PRIVILEGES ON \`sbtest%\`.* TO '$MYSQL_BENCH_USER'@'%' ;" | mysql
-    echo "GRANT ALL PRIVILEGES ON \`ycsb%\`.* TO '$MYSQL_BENCH_USER'@'%' ;" | mysql
+-- Grant MYSQL_BENCH_USER rights to all benchmarking databases
+GRANT NDB_STORED_USER ON *.* TO '${MYSQL_BENCH_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`sysbench%\`.* TO '${MYSQL_BENCH_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`dbt%\`.* TO '${MYSQL_BENCH_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`sbtest%\`.* TO '${MYSQL_BENCH_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`ycsb%\`.* TO '${MYSQL_BENCH_USER}'@'%';
+EOF
 else
     echo_newline '[K8s Entrypoint MySQLd] Not creating benchmark user. MYSQL_BENCH_USER and MYSQL_BENCH_PASSWORD must be specified to do so.'
 fi
@@ -108,12 +112,24 @@ fi
 ####################################
 ### SETUP HOPSWORKS ROOT USER ###
 ####################################
-echo "{{ include "rondb.createHopsworksRootUser" . }}" | mysql 
+
+GRANT_ON_HOST="%"
+mysql <<EOF
+CREATE USER IF NOT EXISTS '{{ include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'${GRANT_ON_HOST}'
+    IDENTIFIED WITH mysql_native_password
+    BY '${MYSQL_HOPSWORKS_ROOT_PASSWORD}';
+GRANT ALL PRIVILEGES ON *.*
+    TO '{{ include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'${GRANT_ON_HOST}'
+    WITH GRANT OPTION;
+GRANT NDB_STORED_USER ON *.*
+    TO '{{include "hopsworkslib.mysql.hopsworksRootUser" . }}'@'${GRANT_ON_HOST}';
+FLUSH PRIVILEGES;
+EOF
 {{- end }}
 
-##############################
-### RUN CUSTOM SQL SCRIPTS ###
-##############################
+###################################
+### RUN SQL SCRIPTS FROM BACKUP ###
+###################################
 
 # TODO: Move sedding logic in backup(?)
 
@@ -130,6 +146,10 @@ for f in $RESTORE_SCRIPTS_DIR/*; do
     *) echo_newline "[K8s Entrypoint MySQLd] Ignoring $f" ;;
     esac
 done
+
+####################################
+### RUN USER-DEFINED SQL SCRIPTS ###
+####################################
 
 INIT_SCRIPTS_DIR={{ include "rondb.sqlInitScriptsDir" . }}
 echo_newline "[K8s Entrypoint MySQLd] Running user-supplied MySQL init-scripts from '$INIT_SCRIPTS_DIR'"
@@ -149,6 +169,6 @@ done
 
 # When using a local socket, mysqladmin shutdown will only complete when the
 # server is actually down.
-echo_newline '[entrypoints/mysqld_init_db.sh] Shutting down MySQLd via mysqladmin...'
+echo_newline '[K8s Entrypoint MySQLd] Shutting down MySQLd via mysqladmin...'
 mysqladmin -uroot --password="$MYSQL_ROOT_PASSWORD" shutdown --socket="$SOCKET"
-echo_newline "[entrypoints/mysqld_init_db.sh] Successfully shut down MySQLd"
+echo_newline "[K8s Entrypoint MySQLd] Successfully shut down MySQLd"

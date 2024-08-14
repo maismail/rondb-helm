@@ -152,12 +152,6 @@ kubectl create secret generic aws-credentials \
     --from-literal "key_id=${AWS_ACCESS_KEY_ID}" \
     --from-literal "access_key=${AWS_SECRET_ACCESS_KEY}"
 
-# Create required secrets (not part of Helmchart because visible with `helm get values`)
-kubectl create secret generic mysql-passwords \
-  --namespace=$RONDB_NAMESPACE \
-  --from-literal=root=s0meH@rdPW \
-  --from-literal=bench=d1vikult2Gue$
-
 # Run this if both:
 # - TLS Ingress/endToEnd is enabled in values
 # - We are running standalone (without Hopsworks)

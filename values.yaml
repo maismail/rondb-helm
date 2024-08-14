@@ -2,7 +2,7 @@ meta:
   mgmd:
     statefulSetName: mgmds
     headlessClusterIp:
-      name: mgmd-cluster-ip
+      name: headless-mgmds
       port: 1186
       annotations:
         consul.hashicorp.com/service-name: mgmd
@@ -15,7 +15,7 @@ meta:
         consul.hashicorp.com/service-name: mysql
         consul.hashicorp.com/service-tags: 'onlinefs'
     headlessClusterIp:
-      name: mysqld-cluster-ip
+      name: headless-mysqlds
       port: 3306
     externalLoadBalancer:
       enabled: false
@@ -97,10 +97,9 @@ resources:
       mysqldMiB: 650
       benchsMiB: 100
     storage:
-      storageClassName: null
-      dedicatedDiskColumnVolume:
-        enabled: false
-        storageClassName: null
+      classes:
+        default: null
+        diskColumns: null
       diskColumnGiB: 2
       redoLogGiB: 2
       undoLogsGiB: 2

@@ -39,14 +39,14 @@ spec:
         name: rondb-ndbmtd
       spec:
         accessModes: [ReadWriteOnce]
-{{ include "rondb.storageClassName" $ | indent 8 }}
+{{ include "rondb.storageClass.default" $ | indent 8 }}
 {{- $backupGiB := add
     (div $.Values.resources.limits.memory.ndbmtdsMiB 1024)
     $.Values.resources.requests.storage.undoLogsGiB
 }}
         resources:
           requests:
-{{- if not $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+{{- if not $.Values.resources.requests.storage.classes.diskColumns }}
             storage: {{ add
                 $backupGiB
                 $.Values.resources.requests.storage.diskColumnGiB
@@ -67,7 +67,7 @@ spec:
         name: rondb-ndbmtd-dc
       spec:
         accessModes: [ReadWriteOnce]
-{{ include "rondb.diskColumn.storageClassName" $ | indent 8 }}
+{{ include "rondb.storageClass.diskColumns" $ | indent 8 }}
         resources:
           requests:
             storage: {{ add
@@ -338,7 +338,7 @@ spec:
         volumeMounts:
         - name: rondb-ndbmtd
           mountPath: /srv/hops/mysql-cluster/rondb
-{{- if $.Values.resources.requests.storage.dedicatedDiskColumnVolume.enabled }}
+{{- if $.Values.resources.requests.storage.classes.diskColumns }}
         - name: rondb-ndbmtd-dc
           mountPath: /srv/hops/mysql-cluster/ndb_data_files
 {{- end }}
