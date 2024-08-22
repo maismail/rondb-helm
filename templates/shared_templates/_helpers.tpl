@@ -47,6 +47,8 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- define "rondb.waitDatanodes" -}}
 - name: wait-datanodes-dependency
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
+  securityContext:
+{{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 4 }}
   imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
   command:
   - /bin/bash

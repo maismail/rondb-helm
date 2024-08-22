@@ -85,6 +85,10 @@ spec:
           subPath: config.ini
         - name: rondb-mgmd
           mountPath: /srv/hops/mysql-cluster/rondb
+
+        securityContext:
+        {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 12 }}
+
       volumes:
       - name: mgmd-configs
         configMap:
