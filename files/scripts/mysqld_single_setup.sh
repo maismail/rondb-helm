@@ -127,6 +127,18 @@ FLUSH PRIVILEGES;
 EOF
 {{- end }}
 
+{{- if .Values.mysql.exporter.enabled }}
+####################################
+### SETUP MYSQL EXPORTER USER ###
+####################################
+echo_newline "[K8s Entrypoint MySQLd] Initializing mysql exporter user {{ .Values.mysql.exporter.username }}"
+mysql <<EOF
+CREATE USER IF NOT EXISTS '{{ .Values.mysql.exporter.username }}'@'%' IDENTIFIED BY '${MYSQL_EXPORTER_PASSWORD}' WITH MAX_USER_CONNECTIONS {{ .Values.mysql.exporter.maxUserConnections }};
+GRANT NDB_STORED_USER ON *.* TO '{{ .Values.mysql.exporter.username }}'@'%';
+GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO '{{ .Values.mysql.exporter.username }}'@'%';
+EOF
+{{- end }}
+
 ###################################
 ### RUN SQL SCRIPTS FROM BACKUP ###
 ###################################

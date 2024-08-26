@@ -157,6 +157,13 @@ spec:
             secretKeyRef:
               name: {{ include "rondb.mysql.usersSecretName" . }}
               key: {{ .Values.benchmarking.mysqlUsername }}
+{{- if .Values.mysql.exporter.enabled }}
+        - name: MYSQL_EXPORTER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "rondb.mysql.usersSecretName" . }}
+              key: {{ .Values.mysql.exporter.username }}
+{{- end}}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mysqlds }}

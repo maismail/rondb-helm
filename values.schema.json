@@ -93,6 +93,15 @@
                         "credentialsSecretName": {
                             "type": "string",
                             "description": "Secret name for mysql users' passwords"
+                        },
+                        "exporter": {
+                            "type": "object",
+                            "description": "Configuration for mysqld exporter",
+                            "properties": {
+                                "metricsPort": {
+                                    "type": "integer"
+                                }
+                            }
                         }
                     },
                     "required": [
@@ -142,6 +151,9 @@
                 },
                 "dataValidation": {
                     "$ref": "#/$defs/image"
+                },
+                "mysqldExporter": {
+                    "$ref": "#/$defs/image"
                 }
             },
             "required": [
@@ -157,6 +169,21 @@
                 "sqlInitContent": {
                     "type": "object",
                     "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
+                },
+                "exporter": {
+                    "type": "object",
+                    "description": "MySQL exporter configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "username": {
+                            "type": "string"
+                        }, 
+                        "maxUserConnections": {
+                            "type": "integer"
+                        }
+                    }
                 }
             }
         },
@@ -571,6 +598,9 @@
                 },
                 "benchs": {
                     "type": "number"
+                },
+                "mysqldExporters": {
+                    "type": "number"
                 }
             }
         },
@@ -589,6 +619,9 @@
                     "type": "number"
                 },
                 "benchsMiB": {
+                    "type": "number"
+                },
+                "mysqldExportersMiB": {
                     "type": "number"
                 }
             }

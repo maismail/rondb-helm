@@ -21,6 +21,8 @@ meta:
       enabled: false
       class: null
       annotations: {}
+    exporter:
+      metricsPort: 9104
   rdrs:
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
@@ -52,6 +54,11 @@ images:
     repository: ""
     name: python
     tag: 3.12-slim
+  mysqldExporter:
+    registry: docker.hops.works
+    repository: hopsworks
+    name: mysqld_exporter
+    tag: 0.11.2
 mysql:
   sqlInitContent: 
     ycsbTable: |
@@ -66,6 +73,10 @@ mysql:
       GRANT NDB_STORED_USER ON *.* TO 'bench'@'%';
       FLUSH PRIVILEGES;
   credentialsSecretName: "mysql-passwords"
+  exporter:
+    enabled: false
+    username: "exporter"
+    maxUserConnections: 3
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1
@@ -81,21 +92,25 @@ resources:
       mysqlds: 2
       rdrs: 2
       benchs: 2
+      mysqldExporters: 0.2
     memory:
       ndbmtdsMiB: 3500
       rdrsMiB: 500
       mysqldMiB: 1400
       benchsMiB: 500
+      mysqldExportersMiB: 100
   requests:
     cpus:
       mgmds: 0.2
       mysqlds: 1
       rdrs: 1
       benchs: 1
+      mysqldExporters: 0.02
     memory:
       rdrsMiB: 100
       mysqldMiB: 650
       benchsMiB: 100
+      mysqldExportersMiB: 50
     storage:
       classes:
         default: null
