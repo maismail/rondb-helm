@@ -29,6 +29,10 @@ for BACKUP_NODE_ID in $BACKUP_NODE_IDS; do
     rclone copy "$REMOTE_DIR" "$LOCAL_DIR"
 done
 
-ls -la $LOCAL_BACKUP_DIR
-set +x
-echo "Successfully copied over all relevant native backups"
+if [[ -d $LOCAL_BACKUP_DIR ]]; then
+    echo "Successfully copied over all relevant native backups"
+    ls -la $LOCAL_BACKUP_DIR
+else
+    echo "No native backup has been downloaded by this node"
+fi
+
