@@ -515,6 +515,11 @@
                     ],
                     "minimum": 1
                 },
+                "pathPrefix": {
+                    "description": "Prefix of RonDB backup in the configured bucket",
+                    "type": "string",
+                    "default": "rondb_backup"
+                },
                 "objectStorageProvider": {
                     "enum": [
                         "s3"
@@ -545,6 +550,11 @@
                 "enabled": {
                     "type": "boolean",
                     "default": false
+                },
+                "pathPrefix": {
+                    "description": "Prefix of RonDB backup in the configured bucket",
+                    "type": "string",
+                    "default": "rondb_backup"
                 },
                 "objectStorageProvider": {
                     "enum": [

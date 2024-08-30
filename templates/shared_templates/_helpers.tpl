@@ -95,3 +95,11 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "rondb.takeBackupPathPrefix" }}
+{{- .Values.backups.pathPrefix | default "rondb_backup" }}
+{{- end }}
+
+{{- define "rondb.restoreBackupPathPrefix" }}
+{{- .Values.restoreFromBackup.pathPrefix | default "rondb_backup" }}
+{{- end }}

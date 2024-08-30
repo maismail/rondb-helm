@@ -22,7 +22,7 @@ kubectl cp \
 ls -la $LOCAL_BACKUP_DIR
 
 JOB_NUMBER=$(echo $JOB_NAME | tr -d '[[:alpha:]]' | tr -d '-' | sed 's/^0*//' | cut -c -9)
-REMOTE_BACKUP_DIR={{ include "rondb.rcloneBackupRemoteName" . }}:{{ .Values.backups.s3.bucketName }}/$JOB_NUMBER
+REMOTE_BACKUP_DIR={{ include "rondb.rcloneBackupRemoteName" . }}:{{ .Values.backups.s3.bucketName }}/{{ include "rondb.takeBackupPathPrefix" . }}/$JOB_NUMBER
 echo && rclone mkdir $REMOTE_BACKUP_DIR
 echo && rclone ls $REMOTE_BACKUP_DIR
 echo "Copying backup from $LOCAL_BACKUP_DIR to $REMOTE_BACKUP_DIR"

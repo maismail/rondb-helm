@@ -170,6 +170,7 @@ benchmarking:
     minimizeBandwidth: false
 restoreFromBackup:
   backupId: null
+  pathPrefix: rondb_backup
   objectStorageProvider: s3
   excludeDatabases: []
   excludeTables: []
@@ -186,6 +187,7 @@ restoreFromBackup:
     serverSideEncryption: aws:kms
 backups:
   enabled: false
+  pathPrefix: rondb_backup
   schedule: "0 3 * * mon"
   objectStorageProvider: s3
   s3:

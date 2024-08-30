@@ -31,7 +31,7 @@ sed -i "s|REG_SECRET_ACCESS_KEY|$ESCAPED_SECRET_ACCESS_KEY|g" "$RCLONE_CONFIG"
 {{ include "rondb.createRcloneConfig" $ }}
 
 {{- if eq $.Values.restoreFromBackup.objectStorageProvider "s3" }}
-REMOTE_NATIVE_BACKUP_DIR={{ include "rondb.rcloneRestoreRemoteName" . }}:{{ $.Values.restoreFromBackup.s3.bucketName }}/$BACKUP_ID/rondb
+REMOTE_NATIVE_BACKUP_DIR={{ include "rondb.rcloneRestoreRemoteName" . }}:{{ $.Values.restoreFromBackup.s3.bucketName }}/{{ include "rondb.restoreBackupPathPrefix" . }}/$BACKUP_ID/rondb
 echo "Path of remote (native) backup: $REMOTE_NATIVE_BACKUP_DIR"
 {{- end }}
 
