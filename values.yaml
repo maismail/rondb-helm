@@ -24,9 +24,9 @@ meta:
     exporter:
       metricsPort: 9104
   rdrs:
+    statefulSetName: rdrs
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
-    statefulSetName: rdrs
     annotations:
       consul.hashicorp.com/service-name: rdrs
     externalLoadBalancer:
@@ -130,7 +130,12 @@ rondbConfig:
   MaxNoOfConcurrentOperations: 200000
   EmptyApiSlots: 8
   MySQLdSlotsPerNode: 4
-  RdrsSlotsPerNode: 2
+  RdrsSlotsPerNode: 1
+  RdrsMetadataSlotsPerNode: 1
+rdrs:
+  externalMetadataCluster:
+    slotsPerNode: 1
+    mgmds: []
 tls:
   ingress:
     enabled: true

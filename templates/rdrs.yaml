@@ -6,6 +6,7 @@ metadata:
 spec:
   serviceName: {{ .Values.meta.rdrs.headlessClusterIpName }}
   replicas: {{ .Values.clusterSize.minNumRdrs }}
+  podManagementPolicy: Parallel
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
@@ -47,7 +48,7 @@ spec:
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
         securityContext:
-        {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 10 }}
+{{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 10 }}
         command:
           - /bin/bash
           - -c

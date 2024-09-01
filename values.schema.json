@@ -347,11 +347,19 @@
                 "RdrsSlotsPerNode": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 8
+                    "maximum": 1,
+                    "description": "The number of cluster connections we support via the RDRS"
+                },
+                "RdrsMetadataSlotsPerNode": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1,
+                    "description": "We use aditional cluster connections for metadata"
                 },
                 "EmptyApiSlots": {
                     "type": "integer",
-                    "description": "For services that are not handled here, e.g. HopsFS"
+                    "minimum": 1,
+                    "description": "We need at least 1 for the MySQLd setup job. Otherwise this is for services that are not handled here, e.g. HopsFS"
                 }
             },
             "required": [
@@ -363,7 +371,52 @@
                 "ReservedConcurrentOperations",
                 "MaxNoOfConcurrentOperations",
                 "MySQLdSlotsPerNode",
-                "RdrsSlotsPerNode"
+                "RdrsSlotsPerNode",
+                "RdrsMetadataSlotsPerNode"
+            ]
+        },
+        "rdrs": {
+            "type": "object",
+            "properties": {
+                "externalMetadataCluster": {
+                    "type": "object",
+                    "description": "RDRSs will always be in the cluster of the data, not the metadata",
+                    "properties": {
+                        "slotsPerNode": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1,
+                            "maximum": 1
+                        },
+                        "mgmds": {
+                            "type": "array",
+                            "maxItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "ip": {
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "port": {
+                                        "type": "integer",
+                                        "default": 1186
+                                    }
+                                },
+                                "required": [
+                                    "ip"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "slotsPerNode",
+                        "mgmds"
+                    ]
+                }
+            },
+            "required": [
+                "externalMetadataCluster"
             ]
         },
         "tls": {

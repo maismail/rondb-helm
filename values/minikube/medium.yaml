@@ -45,7 +45,6 @@ rondbConfig:
 
   EmptyApiSlots: 0
   MySQLdSlotsPerNode: 4
-  RdrsSlotsPerNode: 2
 
 benchmarking:
   dbt2:

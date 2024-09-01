@@ -15,16 +15,32 @@
                 "IP": {{ include "rondb.mgmdHostname" . | quote }},
                 "Port": 1186
             }
-        ]
+        ],
+        "ConnectionPoolSize": {{ $.Values.rondbConfig.RdrsSlotsPerNode }}
     },
+{{- if eq (len $.Values.rdrs.externalMetadataCluster.mgmds) 0 }}
     "RonDBMetadataCluster": {
         "Mgmds": [
             {
                 "IP": {{ include "rondb.mgmdHostname" . | quote }},
                 "Port": 1186
             }
-        ]
+        ],
+        "ConnectionPoolSize": {{ $.Values.rondbConfig.RdrsMetadataSlotsPerNode }}
     },
+{{- else }}
+    "RonDBMetadataCluster": {
+        "Mgmds": [
+{{- range $index, $mgmd := $.Values.rdrs.externalMetadataCluster.mgmds }}
+            {
+                "IP": {{ $mgmd.ip | quote }},
+                "Port": {{ $mgmd.port | default 1186}}
+            }{{- if ne (add1 $index) (len $.Values.rdrs.externalMetadataCluster.mgmds) }},{{- end }}
+{{- end }}
+        ],
+        "ConnectionPoolSize": {{ $.Values.rdrs.externalMetadataCluster.slotsPerNode }}
+    },
+{{- end }}
     "Security": {
         "TLS": {
 {{ if .Values.tls.endToEnd.enabled }}
