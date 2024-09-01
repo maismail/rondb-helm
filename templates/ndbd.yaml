@@ -264,6 +264,8 @@ spec:
         - /bin/bash
         - -c
         - |
+{{ include "rondb.resolveOwnIp" $ | indent 10 }}
+
 {{ tpl ($.Files.Get "files/scripts/ndbmtds.sh") $ | indent 10 }}
         ports:
           - containerPort: 11860

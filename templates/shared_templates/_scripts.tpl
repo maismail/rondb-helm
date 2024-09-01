@@ -74,3 +74,29 @@ for NEW_NODE_ID in "${!MAP_NODE_IDS[@]}"; do
     echo "New node ID '$NEW_NODE_ID' is restoring these old node IDs: ${MAP_NODE_IDS[$NEW_NODE_ID]}"
 done
 {{- end }}
+
+{{/*
+    Under load the DNS might not resolve to the correct IP immediately.
+    Then a MySQLd or RDRS might be allocated to an empty API slot instead
+    of one that it should be assigned to. In case of a data node, the data
+    node might unnecessarily restart due to this.
+*/}}
+{{ define "rondb.resolveOwnIp" -}}
+echo "Making sure own hostname resolves to the correct IP"
+
+# Get the Pod's current IP
+current_ip=$(hostname -i)
+echo "Current IP: $current_ip"
+
+# Check if the DNS resolves to the current IP
+while true; do
+    resolved_ip=$(getent hosts $(hostname) | awk '{ print $1 }')
+    if [ "$resolved_ip" == "$current_ip" ]; then
+        echo "DNS resolved to the correct IP: $resolved_ip"
+        break
+    else
+        echo "Waiting for DNS to update. Current IP: $current_ip, Resolved IP: $resolved_ip"
+        sleep 1
+    fi
+done
+{{- end }}

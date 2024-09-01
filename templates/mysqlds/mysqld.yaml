@@ -138,6 +138,8 @@ spec:
 
 {{ include "rondb.sedMyCnfFile" . | indent 10 }}
 
+{{ include "rondb.resolveOwnIp" $ | indent 10 }}
+
           mysqld --defaults-file=$RONDB_DATA_DIR/my.cnf
         ports:
           - containerPort: 3306
