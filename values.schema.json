@@ -3,7 +3,7 @@
     "properties": {
         "isMultiNodeCluster": {
             "type": "boolean",
-            "description": "Whether we our Kubernetes cluster has multiple nodes"
+            "description": "Whether the Kubernetes cluster has multiple nodes"
         },
         "staticCpuManagerPolicy": {
             "type": "boolean",
@@ -354,7 +354,7 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 1,
-                    "description": "We use aditional cluster connections for metadata"
+                    "description": "We use additional cluster connections for metadata"
                 },
                 "EmptyApiSlots": {
                     "type": "integer",
@@ -723,7 +723,7 @@
                         "null"
                     ],
                     "default": null,
-                    "description": "Load balancer implmentation class. If not defined, we fallback to global._hopsworks.externalLoadBalancers.class if defined. "
+                    "description": "Load balancer implementation class. If not defined, we fallback to global._hopsworks.externalLoadBalancers.class if defined. "
                 },
                 "annotations": {
                     "type": "object",
