@@ -22,8 +22,15 @@ escape_sed() {
 ESCAPED_ACCESS_KEY_ID=$(escape_sed "$ACCESS_KEY_ID")
 ESCAPED_SECRET_ACCESS_KEY=$(escape_sed "$SECRET_ACCESS_KEY")
 
-sed -i "s|REG_ACCESS_KEY_ID|$ESCAPED_ACCESS_KEY_ID|g" "$RCLONE_CONFIG"
-sed -i "s|REG_SECRET_ACCESS_KEY|$ESCAPED_SECRET_ACCESS_KEY|g" "$RCLONE_CONFIG"
+if [[ -z "$ACCESS_KEY_ID" ]]; then
+    # Use IAM Role instead
+    sed -i '/access_key_id/d' "$RCLONE_CONFIG"
+    sed -i '/secret_access_key/d' "$RCLONE_CONFIG"
+    sed -i 's/env_auth.*/env_auth = true/g' "$RCLONE_CONFIG"
+else
+    sed -i "s|REG_ACCESS_KEY_ID|$ESCAPED_ACCESS_KEY_ID|g" "$RCLONE_CONFIG"
+    sed -i "s|REG_SECRET_ACCESS_KEY|$ESCAPED_SECRET_ACCESS_KEY|g" "$RCLONE_CONFIG"
+fi
 {{- end }}
 {{- end }}
 

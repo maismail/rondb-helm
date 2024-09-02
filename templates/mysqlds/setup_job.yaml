@@ -55,10 +55,12 @@ spec:
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.backups.s3.keyCredentialsSecret | nindent 14 }}
+              optional: true
         - name: SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.backups.s3.secretCredentialsSecret | nindent 14 }}
+              optional: true
 {{- end }}
         - name: POD_NAME
           valueFrom:

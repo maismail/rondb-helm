@@ -12,6 +12,7 @@ data:
         provider = AWS
         access_key_id = REG_ACCESS_KEY_ID
         secret_access_key = REG_SECRET_ACCESS_KEY
+        env_auth = false
         region = {{ .Values.restoreFromBackup.s3.region }}
         server_side_encryption = {{ .Values.restoreFromBackup.s3.serverSideEncryption }}
         storage_class = STANDARD
@@ -23,6 +24,7 @@ data:
         provider = AWS
         access_key_id = REG_ACCESS_KEY_ID
         secret_access_key = REG_SECRET_ACCESS_KEY
+        env_auth = false
         region = {{ .Values.backups.s3.region }}
         server_side_encryption = {{ .Values.backups.s3.serverSideEncryption }}
         storage_class = STANDARD

@@ -46,10 +46,12 @@ spec:
               valueFrom:
                 secretKeyRef:
 {{- toYaml .Values.backups.s3.keyCredentialsSecret | nindent 18 }}
+                  optional: true
             - name: SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
 {{- toYaml .Values.backups.s3.secretCredentialsSecret | nindent 18 }}
+                  optional: true
 {{- end }}
             volumeMounts:
             - name: rclone-configs

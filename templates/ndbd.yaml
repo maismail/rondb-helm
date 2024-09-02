@@ -177,10 +177,12 @@ spec:
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.restoreFromBackup.s3.keyCredentialsSecret | nindent 14 }}
+              optional: true
         - name: SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.restoreFromBackup.s3.secretCredentialsSecret | nindent 14 }}
+              optional: true
 {{- end }}
         - name: RCLONE_MOUNT_FILEPATH
           value: {{ include "rondb.rawRCloneConf" $ }}
@@ -379,10 +381,12 @@ spec:
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.backups.s3.keyCredentialsSecret | nindent 14 }}
+              optional: true
         - name: SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
 {{- toYaml $.Values.backups.s3.secretCredentialsSecret | nindent 14 }}
+              optional: true
 {{- end }}
         - name: RCLONE_MOUNT_FILEPATH
           value: {{ include "rondb.rawRCloneConf" $ }}
