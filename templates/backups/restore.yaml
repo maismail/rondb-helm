@@ -272,7 +272,7 @@ spec:
                 "$DATANODE_PODNAME" \
                 -c ndbmtd \
                 -n {{ .Release.Namespace }} \
-                -- /bin/bash -c "rm -rf $BACKUP_DIR && ls -la $GENERAL_BACKUP_DIR")
+                -- /bin/bash -c "rm -rf $BACKUP_DIR && ls -la $GENERAL_BACKUP_DIR || true")
 
             done
           done
