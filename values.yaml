@@ -94,7 +94,7 @@ resources:
       benchs: 2
       mysqldExporters: 0.2
     memory:
-      ndbmtdsMiB: 3500
+      ndbmtdsMiB: 4500
       rdrsMiB: 500
       mysqldMiB: 1400
       benchsMiB: 500
@@ -121,13 +121,6 @@ resources:
       slackGiB: 1
       logGiB: 2
 rondbConfig:
-  MaxNoOfTables: 384
-  MaxNoOfAttributes: 8000
-  MaxNoOfTriggers: 4000
-  TransactionMemory: 300M
-  SharedGlobalMemory: 300M
-  ReservedConcurrentOperations: 50000
-  MaxNoOfConcurrentOperations: 200000
   EmptyApiSlots: 8
   MySQLdSlotsPerNode: 4
   RdrsSlotsPerNode: 1

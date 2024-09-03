@@ -363,16 +363,10 @@
                 }
             },
             "required": [
-                "MaxNoOfTables",
-                "MaxNoOfAttributes",
-                "MaxNoOfTriggers",
-                "TransactionMemory",
-                "SharedGlobalMemory",
-                "ReservedConcurrentOperations",
-                "MaxNoOfConcurrentOperations",
                 "MySQLdSlotsPerNode",
                 "RdrsSlotsPerNode",
-                "RdrsMetadataSlotsPerNode"
+                "RdrsMetadataSlotsPerNode",
+                "EmptyApiSlots"
             ]
         },
         "rdrs": {
