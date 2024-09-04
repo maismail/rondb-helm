@@ -8,6 +8,9 @@ spec:
   backoffLimit: 0
   parallelism: 1
   template:
+    metadata:
+      labels:
+        rondbService: {{ include "rondb.labels.rondbService.restore-backup" $ }}
     spec:
       restartPolicy: Never
       serviceAccountName: rondb-backups-sa

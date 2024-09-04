@@ -13,6 +13,9 @@ spec:
   backoffLimit: 0
   parallelism: 1
   template:
+    metadata:
+      labels:
+        rondbService: {{ include "rondb.labels.rondbService.setup-mysqld" $ }}
     spec:
       restartPolicy: Never
 {{- if .Values.restoreFromBackup.backupId }}

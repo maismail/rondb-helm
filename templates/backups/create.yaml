@@ -9,6 +9,9 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      metadata:
+        labels:
+          rondbService: {{ include "rondb.labels.rondbService.create-backup" $ }}
       template:
         spec:
 {{- include "rondb.SecurityContext" $ | indent 10 }}

@@ -14,7 +14,60 @@
             "type": "integer",
             "description": "TerminationGracePeriodSeconds for data nodes. Important for scaling down data node replicas.",
             "default": 60,
-            "minimum": 30
+            "minimum": 10
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "mgmds": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "description": "Whether to limit ingress for MGMd pods"
+                        },
+                        "ingressSelectors": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "namespaceSelector": {
+                                        "$ref": "#/$defs/selector"
+                                    },
+                                    "podSelector": {
+                                        "$ref": "#/$defs/selector"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "ndbmtds": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "description": "Whether to limit ingress for data node pods. If there is an empty API slot in the config.ini, any host can connect to them."
+                        },
+                        "ingressSelectors": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "namespaceSelector": {
+                                        "$ref": "#/$defs/selector"
+                                    },
+                                    "podSelector": {
+                                        "$ref": "#/$defs/selector"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         "meta": {
             "type": "object",
@@ -722,6 +775,34 @@
                 "annotations": {
                     "type": "object",
                     "description": "Cloud provider load balancer specific annotations. We merge it with the global._hopsworks.externalLoadBalancers.annotations if defined. "
+                }
+            }
+        },
+        "selector": {
+            "type": "object",
+            "properties": {
+                "matchLabels": {
+                    "type": "object"
+                },
+                "matchExpressions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string"
+                            },
+                            "operator": {
+                                "type": "string"
+                            },
+                            "values": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

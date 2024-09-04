@@ -9,7 +9,7 @@ spec:
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
-      rondbService: mgmd
+      rondbService: {{ include "rondb.labels.rondbService.mgmd" $ }}
   volumeClaimTemplates:
     - metadata:
         name: rondb-mgmd
@@ -27,7 +27,7 @@ spec:
     metadata:
       # Used to apply labels to all pods created by the Deployment
       labels:
-        rondbService: mgmd
+        rondbService: {{ include "rondb.labels.rondbService.mgmd" $ }}
     spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
 {{- include "rondb.SecurityContext" $ | indent 6 }}
@@ -117,7 +117,7 @@ spec:
   clusterIP: None
   # Match the spec.template.metadata.labels of the Deployment
   selector:
-    rondbService: mgmd
+    rondbService: {{ include "rondb.labels.rondbService.mgmd" $ }}
   ports:
     - protocol: TCP
       port: {{ .Values.meta.mgmd.headlessClusterIp.port }}

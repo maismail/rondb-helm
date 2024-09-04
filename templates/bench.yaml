@@ -5,14 +5,14 @@ metadata:
   name: benchs
   namespace: {{ .Release.Namespace }}
   labels:
-    rondbService: benchmark
+    rondbService: {{ include "rondb.labels.rondbService.benchmark" $ }}
 spec:
   parallelism: 1
   backoffLimit: 1
   template:
     metadata:
       labels:
-        rondbService: benchmark
+        rondbService: {{ include "rondb.labels.rondbService.benchmark" $ }}
     spec:
       {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       # So we collect errors in case of failures
@@ -120,8 +120,6 @@ kind: Pod
 metadata:
   name: fetch-bench-results
   namespace: {{ .Release.Namespace }}
-  labels:
-    rondbService: benchmark-fetcher
 spec:
 {{- include "rondb.SecurityContext" . | indent 2 }}
 {{- include "hopsworkslib.imagePullSecrets" . | indent 2 }}

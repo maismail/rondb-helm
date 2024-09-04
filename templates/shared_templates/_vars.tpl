@@ -39,3 +39,53 @@ backupRemote
 {{- define "rondb.restoreNativeBackupJobname" -}}
 restore-native-backup
 {{- end -}}
+
+---
+
+{{- define "rondb.labels.rondbService.mgmd" -}}
+mgmd
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.ndbmtd" -}}
+ndbmtd
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.setup-mysqld" -}}
+setup-mysqld
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.mysqld" -}}
+mysqld
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.rdrs" -}}
+rdrs
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.benchmark" -}}
+benchmark
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.create-backup" -}}
+create-backup
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.restore-backup" -}}
+restore-backup
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.mysqld-exporter" -}}
+mysqld-exporter
+{{- end -}}
+
+{{- define "rondb.labels.rondbService.all" -}}
+- {{ include "rondb.labels.rondbService.mgmd" $ }}
+- {{ include "rondb.labels.rondbService.ndbmtd" $ }}
+- {{ include "rondb.labels.rondbService.setup-mysqld" $ }}
+- {{ include "rondb.labels.rondbService.mysqld" $ }}
+- {{ include "rondb.labels.rondbService.rdrs" $ }}
+- {{ include "rondb.labels.rondbService.benchmark" $ }}
+- {{ include "rondb.labels.rondbService.create-backup" $ }}
+- {{ include "rondb.labels.rondbService.restore-backup" $ }}
+- {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
+{{- end -}}

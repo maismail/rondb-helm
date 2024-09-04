@@ -10,12 +10,12 @@ spec:
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
-      rondbService: rdrs
+      rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
   template:
     metadata:
       # Used to apply labels to all pods created by the Deployment
       labels:
-        rondbService: rdrs
+        rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
     spec:
       {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       affinity:
@@ -168,7 +168,7 @@ spec:
   publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
-    rondbService: rdrs
+    rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
   ports:
     - name: rest
       protocol: TCP
@@ -192,7 +192,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    rondbService: rdrs
+    rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
   ports:
     - name: rest
       protocol: TCP
@@ -289,7 +289,7 @@ spec:
   loadBalancerClass: {{ .Values.global._hopsworks.externalLoadBalancers.class }}
 {{- end }}
   selector:
-    rondbService: rdrs
+    rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
   ports:
     - name: rest
       protocol: TCP

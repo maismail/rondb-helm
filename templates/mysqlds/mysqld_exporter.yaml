@@ -9,12 +9,12 @@ spec:
   selector:
     matchLabels:
       app: rondb
-      rondbService: mysqld-exporter
+      rondbService: {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
   template:
     metadata:
       labels:
         app: rondb
-        rondbService: mysqld-exporter
+        rondbService: {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
     spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       containers:
@@ -71,7 +71,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: rondb
-    rondbService: mysqld-exporter
+    rondbService: {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
   annotations:
     prometheus.io/path: '/metrics'
     prometheus.io/port: '{{ .Values.meta.mysqld.exporter.metricsPort }}'
@@ -80,7 +80,7 @@ metadata:
 spec:
   selector:
     app: rondb
-    rondbService: mysqld-exporter
+    rondbService: {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
   ports:
     - name: "metrics"
       protocol: TCP

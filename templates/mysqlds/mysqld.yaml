@@ -10,7 +10,7 @@ spec:
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
-      rondbService: mysqld
+      rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
   # Still in beta mode (Jan 2024)
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: Delete
@@ -19,7 +19,7 @@ spec:
     metadata:
       # Used to apply labels to all pods created by the Deployment
       labels:
-        rondbService: mysqld
+        rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
     spec:      
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
       serviceAccountName: {{ include "rondb.mysqldServiceAccountName" . }}
@@ -260,7 +260,7 @@ spec:
   publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
-    rondbService: mysqld
+    rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
   ports:
     - protocol: TCP
       port: {{ .Values.meta.mysqld.headlessClusterIp.port }}
@@ -281,7 +281,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    rondbService: mysqld
+    rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
   ports:
   - protocol: TCP
     port: {{ .Values.meta.mysqld.service.port }}
@@ -392,7 +392,7 @@ spec:
   loadBalancerClass: {{ .Values.global._hopsworks.externalLoadBalancers.class }}
 {{- end }}
   selector:
-    rondbService: mysqld
+    rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
   ports:
     - protocol: TCP
       port: {{ .Values.meta.mysqld.service.port }}

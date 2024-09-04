@@ -29,7 +29,7 @@ spec:
   selector:
     # Used by the Deployment to select and manage existing pods with the specified label
     matchLabels:
-      rondbService: ndbmtd
+      rondbService: {{ include "rondb.labels.rondbService.ndbmtd" $ }}
       nodeGroup: {{ $nodeGroup | quote }}
   # StatefulSets work with PVCs to create a dedicated persistent volume for
   # each pod replica, ensuring that a pod always re-attaches to the same data
@@ -83,7 +83,7 @@ spec:
     metadata:
       # Used to apply labels to all pods created by the StatefulSet
       labels:
-        rondbService: ndbmtd
+        rondbService: {{ include "rondb.labels.rondbService.ndbmtd" $ }}
         nodeGroup: {{ $nodeGroup | quote }}
     spec:
 {{- include "hopsworkslib.imagePullSecrets" $ | indent 6 }}
@@ -420,7 +420,7 @@ spec:
   publishNotReadyAddresses: true
   # Match the spec.template.metadata.labels of the StatefulSet
   selector:
-    rondbService: ndbmtd
+    rondbService: {{ include "rondb.labels.rondbService.ndbmtd" $ }}
     nodeGroup: {{ $nodeGroup | quote }}
   ports:
     - protocol: TCP

@@ -1,0 +1,66 @@
+{{/*
+    As soon as we have an empty API slot, any host can connect to our data nodes.
+    For certain Pods we do not know ahead of time what hostname they will have.
+    Hence, we use a Network Policy to make empty API slots safe.
+*/}}
+{{ if .Values.networkPolicy.ndbmtds.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-datanode-access
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+{{- $ndbmtdLabel := include "rondb.labels.rondbService.ndbmtd" $ }}
+      rondbService: {{ $ndbmtdLabel }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: rondbService
+          operator: In
+          values:
+{{- $allLabels := include "rondb.labels.rondbService.all" $ | fromYamlArray }}
+{{- $excludeNdbd := without $allLabels $ndbmtdLabel }}
+{{- $excludeNdbd | toYaml | nindent 10 }}
+
+{{- if $.Values.networkPolicy.ndbmtds.ingressSelectors }}
+{{- $.Values.networkPolicy.ndbmtds.ingressSelectors | toYaml | nindent 4 }}
+{{- end }}
+{{- end }}
+---
+{{ if .Values.networkPolicy.mgmds.enabled -}}
+{{/*
+    Restrict access to MGMds; This is important because the MGMd allows executing
+    commands that could be harmful to the cluster.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-mgmd-access
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+{{- $mgmdLabel := include "rondb.labels.rondbService.mgmd" $ }}
+      rondbService: {{ $mgmdLabel }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: rondbService
+          operator: In
+          values:
+{{- $allLabels := include "rondb.labels.rondbService.all" $ | fromYamlArray }}
+{{- $excludeMgmd := without $allLabels $mgmdLabel }}
+{{- $excludeMgmd | toYaml | nindent 10 }}
+
+{{- if $.Values.networkPolicy.mgmds.ingressSelectors }}
+{{- $.Values.networkPolicy.mgmds.ingressSelectors | toYaml | nindent 4 }}
+{{- end }}
+{{- end }}

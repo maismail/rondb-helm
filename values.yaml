@@ -37,6 +37,13 @@ staticCpuManagerPolicy: false
 isMultiNodeCluster: false
 terminationGracePeriodSeconds: 60
 priorityClass: "ndb-high-priority"
+networkPolicy:
+  mgmds:
+    enabled: true
+    ingressSelectors: []
+  ndbmtds:
+    enabled: true
+    ingressSelectors: []
 # TODO: Consider using Chart.appVersion for tag instead
 images:
   rondb:
