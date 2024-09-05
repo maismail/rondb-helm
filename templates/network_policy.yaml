@@ -23,9 +23,8 @@ spec:
         - key: rondbService
           operator: In
           values:
-{{- $allLabels := include "rondb.labels.rondbService.all" $ | fromYamlArray }}
-{{- $excludeNdbd := without $allLabels $ndbmtdLabel }}
-{{- $excludeNdbd | toYaml | nindent 10 }}
+{{- include "rondb.labels.rondbService.all" $ | nindent 10 }}
+
 
 {{- if $.Values.networkPolicy.ndbmtds.ingressSelectors }}
 {{- $.Values.networkPolicy.ndbmtds.ingressSelectors | toYaml | nindent 4 }}
