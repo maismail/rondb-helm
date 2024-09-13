@@ -1,4 +1,4 @@
-isMultiNodeCluster: true
+isMultiNodeCluster: false
 
 clusterSize:
   activeDataReplicas: 2
@@ -43,7 +43,6 @@ rondbConfig:
   ReservedConcurrentOperations: 50000
   MaxNoOfConcurrentOperations: 200000
 
-  EmptyApiSlots: 0
   MySQLdSlotsPerNode: 4
 
 benchmarking:
