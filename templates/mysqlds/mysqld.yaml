@@ -112,7 +112,7 @@ spec:
         env:
           # This is actually already baked into the image
           - name: RONDB_DATA_DIR
-            value: /srv/hops/mysql-cluster
+            value: {{ include "rondb.dataDir" $ }}
           - name: CONNECTIONS_PER_MYSQLD
             value: {{ .Values.rondbConfig.MySQLdSlotsPerNode | quote}}
           - name: POD_NAME
@@ -122,7 +122,7 @@ spec:
         volumeMounts:
         - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
-          mountPath: /srv/hops/mysql-cluster/my-raw.cnf
+          mountPath: {{ include "rondb.dataDir" $ }}/my-raw.cnf
           subPath: my.cnf
         - name: mysql-data-dir
           mountPath: {{ include "rondb.mysqldDataDir" . }}
@@ -153,7 +153,7 @@ spec:
         env:
           # This is actually already baked into the image
           - name: RONDB_DATA_DIR
-            value: /srv/hops/mysql-cluster
+            value: {{ include "rondb.dataDir" $ }}
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -214,12 +214,12 @@ spec:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
-          mountPath: /srv/hops/mysql-cluster/my-raw.cnf
+          mountPath: {{ include "rondb.dataDir" $ }}/my-raw.cnf
           subPath: my.cnf
         - name: mysql-data-dir
           mountPath: {{ include "rondb.mysqldDataDir" . }}
         - name: mysqld-configs
-          mountPath: /srv/hops/mysql-cluster/metadata_create.sh
+          mountPath: {{ include "rondb.dataDir" $ }}/metadata_create.sh
           subPath: metadata_create.sh
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data

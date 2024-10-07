@@ -289,7 +289,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: FILE_SYSTEM_PATH
-            value: /srv/hops/mysql-cluster/ndb_data
+            value: {{ include "rondb.ndbmtd.fileSystemPath" $ }}
         startupProbe:
           exec:
             command:
@@ -345,10 +345,10 @@ spec:
           timeoutSeconds: 5
         volumeMounts:
         - name: rondb-ndbmtd
-          mountPath: /srv/hops/mysql-cluster/rondb
+          mountPath: {{ include "rondb.ndbmtd.volumeSymlink" $ }}
 {{- if $.Values.resources.requests.storage.classes.diskColumns }}
         - name: rondb-ndbmtd-dc
-          mountPath: /srv/hops/mysql-cluster/ndb_data_files
+          mountPath: {{ include "rondb.ndbmtd.fileSystemPathDataFiles" $ }}
 {{- end }}
 {{- if $.Values.backups.enabled -}}
 {{/* This container is used to receive calls to push backups to object storage */}}

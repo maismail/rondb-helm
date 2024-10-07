@@ -6,7 +6,7 @@ echo_newline() { echo; echo "$1"; echo; }
 # SED MY.CNF FILE #
 ###################
 
-RAW_MYCNF_FILEPATH=/srv/hops/mysql-cluster/my-raw.cnf
+RAW_MYCNF_FILEPATH={{ include "rondb.dataDir" $ }}/my-raw.cnf
 MYCNF_FILEPATH=$RONDB_DATA_DIR/my.cnf
 cp $RAW_MYCNF_FILEPATH $MYCNF_FILEPATH
 
@@ -43,7 +43,7 @@ echo_newline "[K8s Entrypoint MySQLd] Running MySQLd as background-process in so
 )
 
 echo_newline "[K8s Entrypoint MySQLd] Pinging MySQLd..."
-SOCKET=/srv/hops/mysql-cluster/mysql.sock
+SOCKET={{ include "rondb.dataDir" $ }}/mysql.sock
 attempt=0
 max_attempts=30
 until mysqladmin --socket="$SOCKET" ping --silent --connect-timeout=2; do

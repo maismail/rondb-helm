@@ -29,11 +29,6 @@ backupRemote
 /home/hopsworks/rclone-raw.conf
 {{- end -}}
 
-{{- define "rondb.mysqldDataDir" -}}
-/srv/hops/mysql-cluster/mysql
-{{- end -}}
-
-
 ---
 
 {{- define "rondb.restoreNativeBackupJobname" -}}
@@ -41,6 +36,48 @@ restore-native-backup
 {{- end -}}
 
 ---
+
+{{- define "rondb.dataDir" -}}
+/srv/hops/mysql-cluster
+{{- end -}}
+
+###########################
+# Ndbmtd data directories #
+###########################
+
+{{- define "rondb.ndbmtd.volumeSymlinkPrefix" -}}
+/default_storage
+{{- end -}}
+
+{{- define "rondb.ndbmtd.volumeSymlink" -}}
+{{ include "rondb.dataDir" $ }}{{ include "rondb.ndbmtd.volumeSymlinkPrefix" $ }}
+{{- end -}}
+
+########
+
+{{- define "rondb.ndbmtd.dataDir" -}}
+{{ include "rondb.dataDir" $ }}/log
+{{- end -}}
+
+{{- define "rondb.ndbmtd.fileSystemPath" -}}
+{{ include "rondb.dataDir" $ }}/ndb_data
+{{- end -}}
+
+{{- define "rondb.ndbmtd.fileSystemPathDataFiles" -}}
+{{ include "rondb.dataDir" $ }}/ndb_data_files
+{{- end -}}
+
+{{- define "rondb.ndbmtd.fileSystemPathUndoFiles" -}}
+{{ include "rondb.dataDir" $ }}/ndb_undo_files
+{{- end -}}
+
+{{- define "rondb.ndbmtd.backupDataDir" -}}
+{{ include "rondb.dataDir" $ }}/ndb/backups
+{{- end -}}
+
+##################
+# Service Labels #
+##################
 
 {{- define "rondb.labels.rondbService.mgmd" -}}
 mgmd

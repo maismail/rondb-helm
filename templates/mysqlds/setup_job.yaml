@@ -130,7 +130,7 @@ spec:
         volumeMounts:
         - name: mysqld-configs
           # Using "raw", so that we can sed NodeIds into the file
-          mountPath: /srv/hops/mysql-cluster/my-raw.cnf
+          mountPath: {{ include "rondb.dataDir" $ }}/my-raw.cnf
           subPath: my.cnf
 {{- if .Values.mysql.sqlInitContent }}
         - name: sql-init-script

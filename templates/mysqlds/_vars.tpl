@@ -1,3 +1,9 @@
+{{- define "rondb.mysqldDataDir" -}}
+{{ include "rondb.dataDir" $ }}/mysql
+{{- end -}}
+
+---
+
 {{- define "rondb.helmSqlInitFile" -}}
 helm-user-supplied.sql
 {{- end -}}

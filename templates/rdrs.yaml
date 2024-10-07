@@ -55,7 +55,7 @@ spec:
           - |
 {{ include "rondb.resolveOwnIp" $ | indent 12 }}
 
-            rdrs -config=/srv/hops/mysql-cluster/rest_api.json
+            rdrs -config={{ include "rondb.dataDir" $ }}/rest_api.json
         ports:
           - containerPort: 4406
           - containerPort: 5406
@@ -110,7 +110,7 @@ spec:
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: rdrs-configs
-          mountPath: /srv/hops/mysql-cluster/rest_api.json
+          mountPath: {{ include "rondb.dataDir" $ }}/rest_api.json
           subPath: rest_api.json
 {{- if and (.Values.tls.endToEnd.enabled)
     ( or

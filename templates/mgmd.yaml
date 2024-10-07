@@ -81,14 +81,12 @@ spec:
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: mgmd-configs
-          mountPath: /srv/hops/mysql-cluster/config.ini
+          mountPath: {{ include "rondb.dataDir" $ }}/config.ini
           subPath: config.ini
         - name: rondb-mgmd
-          mountPath: /srv/hops/mysql-cluster/rondb
-
+          mountPath: {{ include "rondb.dataDir" $ }}/default_storage
         securityContext:
         {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 12 }}
-
       volumes:
       - name: mgmd-configs
         configMap:

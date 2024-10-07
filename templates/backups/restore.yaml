@@ -39,7 +39,7 @@ spec:
         - |
           set -e
 
-          SOCKET=/srv/hops/mysql-cluster/mysql.sock
+          SOCKET={{ include "rondb.dataDir" $ }}/mysql.sock
           CMD=("mysqld" \
             "--ndbcluster" \
             "--ndb-connectstring={{ include "rondb.mgmdHostname" . }}:1186" \
@@ -115,7 +115,7 @@ spec:
             --ndb-connectstring=$MGMD_HOST:1186 \
             --nodeid=$NODE_ID \
             --backupid=$BACKUP_ID \
-            --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/$NODE_ID \
+            --backup-path={{ include "rondb.ndbmtd.backupDataDir" $ }}/BACKUP/BACKUP-$BACKUP_ID/$NODE_ID \
             {{ $excludeDbs }} \
             {{ $excludeTables }}"
 
@@ -165,7 +165,7 @@ spec:
                   --ndb-connectstring=$MGMD_HOST:1186 \
                   --nodeid=$BACKUP_NODE_ID \
                   --backupid=$BACKUP_ID \
-                  --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/$BACKUP_NODE_ID \
+                  --backup-path={{ include "rondb.ndbmtd.backupDataDir" $ }}/BACKUP/BACKUP-$BACKUP_ID/$BACKUP_NODE_ID \
                   {{ $excludeDbs }} \
                   {{ $excludeTables }}"
 
@@ -231,7 +231,7 @@ spec:
             --ndb-connectstring=$MGMD_HOST:1186 \
             --nodeid=1 \
             --backupid=$BACKUP_ID \
-            --backup-path=/srv/hops/mysql-cluster/ndb/backups/BACKUP/BACKUP-$BACKUP_ID/1 \
+            --backup-path={{ include "rondb.ndbmtd.backupDataDir" $ }}/BACKUP/BACKUP-$BACKUP_ID/1 \
             {{ $excludeDbs }} \
             {{ $excludeTables }}"
 
@@ -269,7 +269,7 @@ spec:
             for ((r = 0; r < NUM_REPLICAS; r++)); do
 
               DATANODE_PODNAME="node-group-$g-$r"
-              GENERAL_BACKUP_DIR="/srv/hops/mysql-cluster/ndb/backups/BACKUP"
+              GENERAL_BACKUP_DIR="{{ include "rondb.ndbmtd.backupDataDir" $ }}/BACKUP"
               BACKUP_DIR="$GENERAL_BACKUP_DIR/BACKUP-$BACKUP_ID"
               (set -x; kubectl exec \
                 "$DATANODE_PODNAME" \

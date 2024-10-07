@@ -46,8 +46,8 @@ handle_sigterm() {
 trap handle_sigterm SIGTERM
 
 # Creating symlinks to the persistent volume
-BASE_DIR=/srv/hops/mysql-cluster
-RONDB_VOLUME=${BASE_DIR}/rondb
+BASE_DIR={{ include "rondb.dataDir" $ }}
+RONDB_VOLUME=${BASE_DIR}{{ include "rondb.ndbmtd.volumeSymlinkPrefix" $ }}
 {{ if $.Values.resources.requests.storage.classes.diskColumns }}
 RONDB_DIRS=(log ndb_data ndb_undo_files ndb/backups)
 {{ else }}

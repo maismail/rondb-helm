@@ -5,15 +5,15 @@
 # management client (ndb_mgm).
 
 INITIAL_ARG=
-CONFIG_DB_DIR=/srv/hops/mysql-cluster/mgmd
+CONFIG_DB_DIR={{ include "rondb.dataDir" $ }}/mgmd
 FOUND_FILES=$(find "$CONFIG_DB_DIR" -type f -name "*config.bin.*")
 NUM_FOUND=$(echo "$FOUND_FILES" | grep -c .)
 if [ "$NUM_FOUND" -lt 1 ]; then
     echo "No configuration database available. Doing an initial start."
     INITIAL_ARG="--initial"
 
-    BASE_DIR=/srv/hops/mysql-cluster
-    RONDB_VOLUME=${BASE_DIR}/rondb
+    BASE_DIR={{ include "rondb.dataDir" $ }}
+    RONDB_VOLUME=${BASE_DIR}/default_storage
     for dir in log mgmd
     do
         rm -rf ${BASE_DIR}/${dir}

@@ -10,7 +10,7 @@ kubectl exec \
     $MYSQLD_PODNAME \
     -c mysqld \
     -n {{ .Release.Namespace }} \
-    -- /bin/bash -c "/srv/hops/mysql-cluster/metadata_create.sh $REMOTE_BACKUP_DIR"
+    -- /bin/bash -c "{{ include "rondb.dataDir" $ }}/metadata_create.sh $REMOTE_BACKUP_DIR"
 
 # Not running rclone on a MySQLd sidecar because it would require creating an
 # additional shared volume on the MySQLd pod.
