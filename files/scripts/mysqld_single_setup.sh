@@ -46,7 +46,7 @@ echo_newline "[K8s Entrypoint MySQLd] Pinging MySQLd..."
 SOCKET={{ include "rondb.dataDir" $ }}/mysql.sock
 attempt=0
 max_attempts=30
-until mysqladmin --socket="$SOCKET" ping --silent --connect-timeout=2; do
+until mysqladmin -uroot --socket="$SOCKET" ping --silent --connect-timeout=2; do
     echo_newline "[K8s Entrypoint MySQLd] Failed pinging MySQLd on attempt $attempt" && sleep 1
     attempt=$((attempt + 1))
     if [[ $attempt -gt $max_attempts ]]; then

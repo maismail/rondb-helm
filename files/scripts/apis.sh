@@ -15,6 +15,7 @@ while true; do
         -h $MYSQLD_SERVICE_HOSTNAME \
         --protocol=tcp \
         --port=3306 \
+        --connect-timeout=2 \
         --user=$MYSQL_BENCH_USER \
         -p"$MYSQL_BENCH_PASSWORD" \
         -e "SELECT 1;"
