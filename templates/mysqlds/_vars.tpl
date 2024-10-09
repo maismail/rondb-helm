@@ -20,6 +20,7 @@ helm-user-supplied.sql
 
 ---
 
+# A successful Pod can be removed; don't remove the successful Job itself though
 {{- define "rondb.mysqldSetupJobName" -}}
 setup-mysqld-dont-remove
 {{- end -}}
