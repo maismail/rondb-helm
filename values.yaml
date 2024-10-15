@@ -23,6 +23,7 @@ meta:
       annotations: {}
     exporter:
       metricsPort: 9104
+    addSysNiceCapability: true
   rdrs:
     statefulSetName: rdrs
     serviceName: rdrs

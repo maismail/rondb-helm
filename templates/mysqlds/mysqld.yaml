@@ -209,7 +209,9 @@ spec:
         securityContext:
           capabilities:
             add:
+            {{ if .Values.meta.mysqld.addSysNiceCapability -}}
               - SYS_NICE
+            {{- end }}
         volumeMounts:
         # Only mount single file, otherwise entire directory becomes read-only
         - name: mysqld-configs
