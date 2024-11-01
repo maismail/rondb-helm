@@ -181,6 +181,8 @@ restoreFromBackup:
   excludeDatabases: []
   excludeTables: []
   s3:
+    provider: "AWS"
+    endpoint: null
     keyCredentialsSecret:
       name: aws-credentials
       key: key_id
@@ -197,6 +199,8 @@ backups:
   schedule: "0 3 * * mon"
   objectStorageProvider: s3
   s3:
+    provider: "AWS"
+    endpoint: null
     keyCredentialsSecret:
       name: aws-credentials
       key: key_id

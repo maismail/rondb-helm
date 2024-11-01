@@ -25,6 +25,7 @@ echo_newline "[K8s Entrypoint MySQLd] Directory for MySQL schemata to *restore*:
 (
     set -x
     ls -la $RESTORE_SCRIPTS_DIR
+    find "$RESTORE_SCRIPTS_DIR" -type f -name "*.sql"
 )
 
 {{ include "rondb.initializeMySQLd" . }}
@@ -149,7 +150,7 @@ SED_CREATE_TABLE="s/CREATE TABLE( IF NOT EXISTS)? /CREATE TABLE IF NOT EXISTS /g
 SED_CREATE_USER="s/CREATE USER( IF NOT EXISTS)? /CREATE USER IF NOT EXISTS /g"
 
 echo_newline "[K8s Entrypoint MySQLd] Running MySQL restore scripts from '$RESTORE_SCRIPTS_DIR' (if available)"
-for f in $RESTORE_SCRIPTS_DIR/*; do
+for f in $(find "$RESTORE_SCRIPTS_DIR" -type f -name "*.sql"); do
     case "$f" in
     *.sql)
         echo_newline "[K8s Entrypoint MySQLd] Running $f"
