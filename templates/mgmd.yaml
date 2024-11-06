@@ -85,8 +85,7 @@ spec:
           subPath: config.ini
         - name: rondb-mgmd
           mountPath: {{ include "rondb.dataDir" $ }}/default_storage
-        securityContext:
-        {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 12 }}
+        {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 8 }}
       volumes:
       - name: mgmd-configs
         configMap:

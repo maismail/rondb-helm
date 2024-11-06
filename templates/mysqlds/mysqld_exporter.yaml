@@ -21,8 +21,7 @@ spec:
       - name: mysqld-exporter
         image:  {{ include "image_address" (dict "image" .Values.images.mysqldExporter) }}
         imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
-        securityContext:
-        {{- include "hopsworkslib.commonContainerSecurityContext" . | nindent 10 }}
+        {{- include "hopsworkslib.commonContainerSecurityContext" . | nindent 8 }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mysqldExporters }}

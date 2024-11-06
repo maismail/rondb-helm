@@ -19,6 +19,7 @@
 {{- end -}}
 
 {{- define "rondb.SecurityContext" }}
+{{- if include "hopsworkslib.securityContextEnabled" . }}
 # This corresponds to the MySQL user/group which is created in the Dockerfile
 # Beware that a lot of files & directories are created in the RonDB Dockerfile, which belong
 # to the MySQL user/group.
@@ -26,6 +27,7 @@ securityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+{{- end -}}
 {{- end }}
 
 {{ define "rondb.storageClass.default" -}}
@@ -47,8 +49,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- define "rondb.waitDatanodes" -}}
 - name: wait-datanodes-dependency
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
-  securityContext:
-{{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 4 }}
+  {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 2 }}
   imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
   command:
   - /bin/bash
