@@ -413,6 +413,11 @@
                     "type": "integer",
                     "minimum": 1,
                     "description": "We need at least 1 for the MySQLd setup job. Otherwise this is for services that are not handled here, e.g. HopsFS"
+                },
+                "NdbmtdMemoryOverheadMiB": {
+                    "type": "integer",
+                    "description": "Memory overhead for the RonDB datanode containers.",
+                    "default": 1024
                 }
             },
             "required": [

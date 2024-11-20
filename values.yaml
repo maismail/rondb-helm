@@ -133,6 +133,7 @@ rondbConfig:
   MySQLdSlotsPerNode: 4
   RdrsSlotsPerNode: 1
   RdrsMetadataSlotsPerNode: 1
+  NdbmtdMemoryOverheadMiB: 1024
 rdrs:
   externalMetadataCluster:
     slotsPerNode: 1
@@ -152,7 +153,7 @@ tls:
 timeoutsMinutes:
   singleSetupMySQLds: 5
   # TODO: Make this dependent on amount of data
-  restoreNativeBackup: 30
+  restoreNativeBackup: 120
 benchmarking:
   enabled: false
   mysqlUsername: "bench"

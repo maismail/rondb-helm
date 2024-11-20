@@ -171,6 +171,17 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+        startupProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              mysql --defaults-file=$RONDB_DATA_DIR/my.cnf \
+                -e "SELECT 1"
+          failureThreshold: 100
+          periodSeconds: 10
         livenessProbe:
           exec:
             command:
@@ -188,7 +199,6 @@ spec:
 {{- else }}
                     --ssl-mode=PREFERRED
 {{- end }}
-          initialDelaySeconds: 5
           failureThreshold: 4
           periodSeconds: 5
           timeoutSeconds: 2
@@ -201,7 +211,6 @@ spec:
               set -e
               mysql --defaults-file=$RONDB_DATA_DIR/my.cnf \
                 -e "SELECT 1"
-          initialDelaySeconds: 5
           failureThreshold: 2
           periodSeconds: 5
           timeoutSeconds: 2

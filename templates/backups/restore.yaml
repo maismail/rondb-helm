@@ -151,7 +151,6 @@ spec:
           NUM_NODE_GROUPS={{ .Values.clusterSize.numNodeGroups }}
           NUM_REPLICAS={{ .Values.clusterSize.activeDataReplicas }}
 
-          # TODO: Parallelize this
           for ((g = 0; g < NUM_NODE_GROUPS; g++)); do
             for ((r = 0; r < NUM_REPLICAS; r++)); do
 
@@ -164,6 +163,7 @@ spec:
 
                 RUN_CMD="ndb_restore \
                   --restore-data \
+                  --allow-unique-indexes \
                   --ndb-connectstring=$MGMD_HOST:1186 \
                   --nodeid=$BACKUP_NODE_ID \
                   --backupid=$BACKUP_ID \
@@ -175,12 +175,12 @@ spec:
                   "$DATANODE_PODNAME" \
                   -c ndbmtd \
                   -n {{ .Release.Namespace }} \
-                  -- /bin/bash -c "$RUN_CMD")
+                  -- /bin/bash -c "$RUN_CMD") &
 
               done
             done
           done
-
+          wait 
           echo "Successfully restored RonDB native data"
         env:
         - name: MGMD_HOST
