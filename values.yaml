@@ -212,3 +212,17 @@ backups:
     region: eu-north-1
     # possible values: aws:kms, aws:kms:dsse, AES256
     serverSideEncryption: aws:kms
+
+nodeSelector:
+  mysqld: {}
+  ndbmtd: {}
+  mgmd: {}
+  rdrs: {}
+  backup: {}
+
+tolerations:
+  mysqld: []
+  ndbmtd: []
+  mgmd: []
+  rdrs: []
+  backup: []

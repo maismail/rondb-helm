@@ -671,6 +671,58 @@
             "required": [
                 "enabled"
             ]
+        },
+        "nodeSelector": {
+            "type": "object",
+            "description": "This ensures that Kubernetes schedules pods only onto nodes that match all the specified labels.",
+            "properties": {
+                "mysqld": {
+                    "type": "object",
+                    "default": {}
+                },
+                "ndbmtd": {
+                    "type": "object",
+                    "default": {}
+                },
+                "mgmd": {
+                    "type": "object",
+                    "default": {}
+                },
+                "rdrs": {
+                    "type": "object",
+                    "default": {}
+                },
+                "backup": {
+                    "type": "object",
+                    "default": {}
+                }
+            }
+        },
+        "tolerations": {
+            "type": "object",
+            "description": "These tolerations allow Kubernetes to schedule pods on nodes with matching taints, ensuring proper placement based on cluster policies.",
+            "properties": {
+                "mysqld": {
+                    "type": "array",
+                    "default": []
+                },
+                "ndbmtd": {
+                    "type": "array",
+                    "default": []
+                },
+                "mgmd": {
+                    "type": "array",
+                    "default": []
+                },
+                "rdrs": {
+                    "type": "array",
+                    "default": []
+                },
+                "backup": {
+                    "type": "array",
+                    "default": []
+                }
+            }
         }
     },
     "required": [

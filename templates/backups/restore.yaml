@@ -16,6 +16,8 @@ spec:
       serviceAccountName: rondb-backups-sa
 {{- include "rondb.SecurityContext" $ | indent 6 }}
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.backup "global" .Values.global) | indent 6}}
+{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.backup "global" .Values.global) | indent 6}}
       {{ if .Values.priorityClass -}}
       priorityClassName: {{ .Values.priorityClass | quote }}
       {{- end  }}
