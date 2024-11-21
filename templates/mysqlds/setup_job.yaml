@@ -229,6 +229,10 @@ kind: ServiceAccount
 metadata:
   name: {{ include "rondb.mysqldSetupServiceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+{{ include "hopsworkslib.serviceAccountAnnotations" (dict 
+"global" .Values.global  
+"serviceAccount" .Values.mysqldSetupServiceAccount
+) | nindent 2 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
