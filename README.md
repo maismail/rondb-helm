@@ -88,6 +88,23 @@ kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download
 kubectl delete pvc --all
 ```
 
+## Test Ingress with Minikube
+
+Ingress towards MySQLds or RDRSs can be tested using the following steps:
+
+1. Run `minikube addons enable ingress`
+2. Run `minikube tunnel`
+3. Place `127.0.0.1 rondb.com` in your /etc/hosts file
+4. Connect to RDRS from host:
+    `curl -i --insecure https://rondb.com/0.1.0/ping`
+    This should reach the RDRS and return 200.
+5. Connect to MySQLd from host (needs MySQL client installed):
+    mysqladmin -h rondb.com \
+        --protocol=tcp \
+        --connect-timeout=3 \
+        --ssl-mode=REQUIRED \
+        ping
+
 ## Optimizations
 
 Data nodes strongly profit from being able to lock CPUs. This is possible with the
