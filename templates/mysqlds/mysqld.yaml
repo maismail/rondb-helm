@@ -22,8 +22,9 @@ spec:
         rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
     spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
-{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mysqld "global" .Values.global) | indent 6}}
-{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mysqld "global" .Values.global) | indent 6}}
+{{- $global := .Values.global }}
+{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mysqld "global" $global) | indent 6 }}
+{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mysqld "global" $global) | indent 6 }}
       serviceAccountName: {{ include "rondb.mysqldServiceAccountName" . }}
       affinity:
         podAffinity:

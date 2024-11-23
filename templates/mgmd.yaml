@@ -30,8 +30,9 @@ spec:
         rondbService: {{ include "rondb.labels.rondbService.mgmd" $ }}
     spec:
 {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
-{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mgmd "global" .Values.global) | indent 6}}
-{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mgmd "global" .Values.global) | indent 6}}
+{{- $global := .Values.global }}
+{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mgmd "global" $global) | indent 6 }}
+{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mgmd "global" $global) | indent 6 }}
 {{- include "rondb.SecurityContext" $ | indent 6 }}
       {{ if .Values.priorityClass -}}
       priorityClassName: {{ .Values.priorityClass | quote }}

@@ -17,9 +17,10 @@ spec:
       labels:
         rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
     spec:
-      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
-      {{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.rdrs "global" .Values.global) | indent 6}}
-      {{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.rdrs "global" .Values.global) | indent 6}}
+{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+{{- $global := .Values.global }}
+{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.rdrs "global" $global) | indent 6 }}
+{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.rdrs "global" $global) | indent 6 }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
