@@ -134,6 +134,7 @@ rondbConfig:
   RdrsSlotsPerNode: 1
   RdrsMetadataSlotsPerNode: 1
   NdbmtdMemoryOverheadMiB: 1024
+  InitialTablespaceSizeGiB: -1
 rdrs:
   externalMetadataCluster:
     slotsPerNode: 1
