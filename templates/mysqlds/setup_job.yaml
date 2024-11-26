@@ -4,6 +4,7 @@
     scripts, if any are provided by the Helm user. The Job will wait for the
     native restore-backup Job to have completed, if the user has provided a backup ID.
 */}}
+{{- if .Release.IsInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -196,6 +197,7 @@ spec:
       - name: sql-init-script
         configMap:
           name: sql-init-script
+{{- end }}
 {{- end }}
 ---
 {{ if .Values.mysql.sqlInitContent }}

@@ -78,6 +78,7 @@ spec:
     the native backups happens during data node startup.
 */}}
 {{ include "rondb.waitDatanodes" . | indent 6 }}
+{{- if .Release.IsInstall }}
       - name: wait-single-setup-job
         image: {{ include "rondb.toolboxImage" (dict "Values" .Values "default" .default "image" .Values.images.toolbox) }}
         imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
@@ -103,6 +104,7 @@ spec:
           )
 
           echo "Setup Job has completed successfully"
+{{- end }}
       - name: mysqld-initialize-insecure
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
         command:
