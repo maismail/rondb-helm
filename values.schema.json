@@ -423,6 +423,10 @@
                     "type": "integer",
                     "description": "InitialTableSpace size in GiB. By default, it is set to -1, which enforces the initial tablespace to use the entire diskColumnGiB space. If set to 0, the same behaviour applies and the diskColumnGiB is used.",
                     "default": -1
+                },
+                "DiskPageBufferMemory": {
+                    "type": "string",
+                    "description": "DiskPageBufferMemory are used by disk columns. This is the page cache that contains disk pages when they are in memory. By default it is not defined."
                 }
             },
             "required": [
