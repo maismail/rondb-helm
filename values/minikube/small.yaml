@@ -1,4 +1,5 @@
 isMultiNodeCluster: false
+terminationGracePeriodSeconds: 10
 
 clusterSize:
   activeDataReplicas: 2
@@ -42,7 +43,7 @@ rondbConfig:
   SharedGlobalMemory: 300M
   ReservedConcurrentOperations: 50000
   MaxNoOfConcurrentOperations: 200000
-
+  NdbmtdMemoryOverheadMiB: 825
   EmptyApiSlots: 2
   MySQLdSlotsPerNode: 4
 
