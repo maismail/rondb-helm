@@ -1,11 +1,20 @@
-{{ if and (include "hopsworkslib.withoutHopsworks" .) (or .Values.tls.endToEnd.enabled .Values.tls.ingress.enabled) }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) (or 
+    .Values.meta.mysqld.statefulSet.endToEndTls
+    .Values.meta.rdrs.statefulSet.endToEndTls
+    .Values.meta.rdrs.ingress.tls.enabled) 
+}}
 # We don't use the cert-manager in a Hopsworks environment
 # Can also reference a base TLS Secret (air-gapped environment) or Let's Encrypt
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: selfsigned-issuer
+  name: {{ include "rondb.certManager.issuer" $ }}
   namespace: {{ .Release.Namespace }}
 spec:
+{{- if .Values.tls.caSecretName }}
+  ca:
+    secretName: {{ .Values.tls.caSecretName }}
+{{- else }}
   selfSigned: {}
-{{ end }}
+{{- end }}
+{{- end }}

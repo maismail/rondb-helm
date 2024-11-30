@@ -7,7 +7,9 @@ meta:
       annotations:
         consul.hashicorp.com/service-name: mgmd
   mysqld:
-    statefulSetName: mysqlds
+    statefulSet:
+      name: mysqlds
+      endToEndTls: false
     service:
       name: mysqld
       port: 3306
@@ -25,7 +27,9 @@ meta:
       metricsPort: 9104
     addSysNiceCapability: true
   rdrs:
-    statefulSetName: rdrs
+    statefulSet:
+      name: rdrs
+      endToEndTls: false
     serviceName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
     annotations:
@@ -34,6 +38,16 @@ meta:
       enabled: false
       class: null
       annotations: {}
+    ingress:
+      enabled: false
+      class: nginx
+      useDefaultBackend: true
+      dnsNames:
+      - rondb.com
+      tls:
+        enabled: true
+        ipAddresses:
+        - 127.0.0.1
 staticCpuManagerPolicy: false
 isMultiNodeCluster: false
 terminationGracePeriodSeconds: 60
@@ -140,16 +154,7 @@ rdrs:
     slotsPerNode: 1
     mgmds: []
 tls:
-  ingress:
-    enabled: true
-    certificateName: rondb-apis-cert
-    secretName: rondb-ingress-tls
-  endToEnd:
-    enabled: false
-    mysqld:
-      secretName: mysqld-tls
-    rdrs:
-      secretName: rdrs-tls
+  caSecretName: null
 # Using minutes for easier template addition
 timeoutsMinutes:
   singleSetupMySQLds: 5

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.meta.rdrs.statefulSetName }}
+  name: {{ .Values.meta.rdrs.statefulSet.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   serviceName: {{ .Values.meta.rdrs.headlessClusterIpName }}
@@ -72,7 +72,7 @@ spec:
           httpGet:
             path: "0.1.0/ping"
             port: 4406
-{{ if and (.Values.tls.endToEnd.enabled)
+{{ if and (.Values.meta.rdrs.statefulSet.endToEndTls)
     ( or
         (include "hopsworkslib.withoutHopsworks" .)
         .Values.global._hopsworks.security.tls.enabled
@@ -90,7 +90,7 @@ spec:
           httpGet:
             path: "0.1.0/ping"
             port: 4406
-{{- if and (.Values.tls.endToEnd.enabled)
+{{- if and (.Values.meta.rdrs.statefulSet.endToEndTls)
     ( or
         (include "hopsworkslib.withoutHopsworks" .)
         .Values.global._hopsworks.security.tls.enabled
@@ -114,7 +114,7 @@ spec:
         - name: rdrs-configs
           mountPath: {{ include "rondb.dataDir" $ }}/rest_api.json
           subPath: rest_api.json
-{{- if and (.Values.tls.endToEnd.enabled)
+{{- if and (.Values.meta.rdrs.statefulSet.endToEndTls)
     ( or
         (include "hopsworkslib.withoutHopsworks" .)
         .Values.global._hopsworks.security.tls.enabled
@@ -128,13 +128,13 @@ spec:
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
       volumes:
-{{- if .Values.tls.endToEnd.enabled }}
+{{- if .Values.meta.rdrs.statefulSet.endToEndTls }}
     {{ if include "hopsworkslib.withoutHopsworks" . }}
       # This will be created by the cert-manager via the Certificate CRD
       # The RDRS will therefore not start until the certificate is available
       - name: tls-certificates
         secret:
-          secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
+          secretName: {{ include "rondb.tls.rdrs.endToEnd.secretName" $ }}
           optional: false    
 {{- else if .Values.global._hopsworks.security.tls.enabled }}
       # This will be created by the certs-operator via the HopsworksCert CRD
@@ -158,6 +158,7 @@ data:
     rest_api.json: |
 {{ tpl (.Files.Get "files/configs/rest_api.json") . | indent 8 }}
 ---
+# We need a headless service to register with the MGMd
 apiVersion: v1
 kind: Service
 metadata:
@@ -219,7 +220,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: {{ .Values.meta.rdrs.statefulSetName }}
+    name: {{ .Values.meta.rdrs.statefulSet.name }}
   minReplicas: {{ .Values.clusterSize.minNumRdrs }}
   maxReplicas: {{ .Values.clusterSize.maxNumRdrs }}
   metrics:
@@ -231,7 +232,7 @@ spec:
         averageUtilization: 70
 {{ end }}
 ---
-{{ if .Values.tls.endToEnd.enabled }}
+{{ if .Values.meta.rdrs.statefulSet.endToEndTls }}
     {{ if include "hopsworkslib.withoutHopsworks" . }}
 # Certificates will prompt the cert-manager to create a TLS Secret using the referenced
 # Issuer.
@@ -241,13 +242,15 @@ metadata:
   name: rdrs-cert
   namespace: {{ .Release.Namespace }}
 spec:
-  secretName: {{ .Values.tls.endToEnd.rdrs.secretName }}
+  secretName: {{ include "rondb.tls.rdrs.endToEnd.secretName" $ }}
   duration: 2160h # 90d
   renewBefore: 360h # 15d
   dnsNames:
+    # We might reach a RDRS Pod via the headless or non-headless ClusterIP
+    - {{ include "rondb.rdrsServiceHostname" $ }}
     - {{ .Values.meta.rdrs.headlessClusterIpName }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
-    name: selfsigned-issuer
+    name: {{ include "rondb.certManager.issuer" $ }}
     kind: Issuer
 ---
     {{ else if .Values.global._hopsworks.security.tls.enabled }}

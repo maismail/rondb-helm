@@ -45,9 +45,10 @@ kubectl create secret generic aws-credentials \
     --from-literal "access_key=${AWS_SECRET_ACCESS_KEY}"
 
 # Run this if both:
-# - TLS Ingress/endToEnd is enabled in values
 # - We are running standalone (without Hopsworks)
-./setup_standalone_tls_dependencies.sh $RONDB_NAMESPACE
+# - [RDRS Ingress is enabled] OR [Any TLS is enabled]
+source ./standalone_deps.sh
+setup_deps $RONDB_NAMESPACE
 
 # Install and/or upgrade:
 helm upgrade -i my-rondb \
@@ -79,13 +80,10 @@ See [Benchmarks](docs/benchmarks.md) for this.
 helm delete --namespace=$RONDB_NAMESPACE my-rondb
 
 # Remove other related resources (non-namespaced objects not removed here e.g. PriorityClass)
-kubectl delete namespace $RONDB_NAMESPACE
+kubectl delete namespace $RONDB_NAMESPACE --timeout=60s
 
-# Remove cert-manager
-kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.3/cert-manager.yaml
-
-# Remove PVCs manually
-kubectl delete pvc --all
+source ./standalone_deps.sh
+destroy_deps
 ```
 
 ## Test Ingress with Minikube

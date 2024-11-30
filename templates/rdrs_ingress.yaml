@@ -1,0 +1,78 @@
+{{- with $rdrsIngress := $.Values.meta.rdrs.ingress }}
+{{- if $rdrsIngress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rdrs
+  namespace: {{ $.Release.Namespace }}
+  # Can also annotate `cert-manager.io/certificate` or `cert-manager.io/issuer`
+  # to auto-create a Certificate resource via the cert-manager.
+  annotations: {}
+spec:
+  ingressClassName: {{ $rdrsIngress.class }}
+# Encryption is used even if this is disabled.
+{{- if $rdrsIngress.tls.enabled }}
+  tls:
+  - secretName: {{ include "rondb.tls.rdrs.ingress.secretName" $ }}
+    hosts:
+{{- range $dnsName := $rdrsIngress.dnsNames }}
+    - {{ $dnsName }}
+{{- end }}
+{{- end }}
+{{- if $rdrsIngress.useDefaultBackend }}
+  defaultBackend:
+    service:
+      name: {{ $.Values.meta.rdrs.serviceName }}
+      port:
+        number: 4406
+{{- end }}
+  rules:
+    # - To make this work with IP, either use defaultBackend or wildcard DNS
+    # - Ingress only supports 80/443 by default, so this should
+    # be directed towards the rdrs REST API
+{{- range $dnsName := $rdrsIngress.dnsNames }}
+    - host: {{ $dnsName }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $.Values.meta.rdrs.serviceName }}
+              port:
+                number: 4406
+{{- end }}
+---
+{{- if $rdrsIngress.tls.enabled }}
+{{- if not (include "hopsworkslib.withoutHopsworks" $) }}
+{{- fail "We cannot enable Ingress encryption with Hopsworks" }}
+{{- else }}
+# This will prompt the cert-manager to create a TLS Secret using the referenced
+# Issuer. Could technically also auto-create a Certificate by annotating the Ingress
+# with `cert-manager.io/issuer` or `cert-manager.io/certificate`. This way, we however
+# have more control over the Certificate resource.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rondb-ingress-cert
+  namespace: {{ $.Release.Namespace }}
+spec:
+  # The name of the TLS Secret that the cert-manager will create
+  secretName: {{ include "rondb.tls.rdrs.ingress.secretName" $ }}
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  dnsNames:
+{{- range $dnsName := $rdrsIngress.dnsNames }}
+    - {{ $dnsName }}
+{{- end }}
+  ipAddresses:
+{{- range $ipAddress := $rdrsIngress.tls.ipAddresses }}
+    - {{ $ipAddress }}
+{{- end }}
+  issuerRef:
+    name: {{ include "rondb.certManager.issuer" $ }}
+    kind: Issuer
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

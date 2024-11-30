@@ -43,7 +43,7 @@
 {{- end }}
     "Security": {
         "TLS": {
-{{ if .Values.tls.endToEnd.enabled }}
+{{ if .Values.meta.rdrs.statefulSet.endToEndTls }}
     {{ if include "hopsworkslib.withoutHopsworks" . }}
     {{- /*
     Standard filenames in Kubernetes TLS Secrets

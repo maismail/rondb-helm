@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.meta.mysqld.statefulSetName }}
+  name: {{ .Values.meta.mysqld.statefulSet.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   serviceName: {{ .Values.meta.mysqld.headlessClusterIp.name }}
@@ -199,7 +199,7 @@ spec:
                     --defaults-file=$RONDB_DATA_DIR/my.cnf \
                     ping \
                     --protocol=tcp \
-{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.meta.mysqld.statefulSet.endToEndTls }}
                     --ssl-mode=REQUIRED
 {{- else }}
                     --ssl-mode=PREFERRED
@@ -239,10 +239,14 @@ spec:
       # StatefulSets work with PVCs to create a dedicated persistent volume for
       # each pod replica, ensuring that a pod always re-attaches to the same data
       # even if it is rescheduled to a different node.
-{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+{{- if $.Values.meta.mysqld.statefulSet.endToEndTls}}
+{{- if include "hopsworkslib.withoutHopsworks" $ }}
         - name: tls-certificates
           mountPath: /etc/tls
           readOnly: true
+{{- else }}
+{{- fail "We cannot enable endToEnd encryption for MySQLds with Hopsworks" }}
+{{- end }}
 {{- end }}
       volumes:
       - name: mysqld-configs
@@ -254,15 +258,16 @@ spec:
       - name: rclone-configs
         configMap:
           name: rclone-configs
-{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.endToEnd.enabled }}
+{{- if and (include "hopsworkslib.withoutHopsworks" .) .Values.meta.mysqld.statefulSet.endToEndTls }}
       # This will be created by the cert-manager via the Certificate CRD
       # The MySQLd will therefore not start until the certificate is available
       - name: tls-certificates
         secret:
-          secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
+          secretName: {{ include "rondb.tls.mysqld.endToEnd.secretName" $ }}
           optional: false
 {{- end }}
 ---
+# We need a headless service to register with the MGMd
 apiVersion: v1
 kind: Service
 metadata:
@@ -312,7 +317,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: {{ .Values.meta.mysqld.statefulSetName }}
+    name: {{ .Values.meta.mysqld.statefulSet.name }}
   minReplicas: {{ .Values.clusterSize.minNumMySQLServers }}
   maxReplicas: {{ .Values.clusterSize.maxNumMySQLServers }}
   metrics:
@@ -324,7 +329,7 @@ spec:
         averageUtilization: 70
 {{ end }}
 ---
-{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.tls.ingress.enabled }}
+{{ if and (include "hopsworkslib.withoutHopsworks" .) .Values.meta.mysqld.statefulSet.endToEndTls }}
 # Certificates will prompt the cert-manager to create a TLS Secret using the referenced
 # Issuer.
 apiVersion: cert-manager.io/v1
@@ -333,15 +338,15 @@ metadata:
   name: mysql-cert
   namespace: {{ .Release.Namespace }}
 spec:
-  secretName: {{ .Values.tls.endToEnd.mysqld.secretName }}
+  secretName: {{ include "rondb.tls.mysqld.endToEnd.secretName" $ }}
   duration: 2160h # 90d
   renewBefore: 360h # 15d
   dnsNames:
+    # We might reach a MySQLd Pod via the headless or non-headless ClusterIP
     - {{ include "rondb.mysqldServiceHostname" . }}
-    # TODO: this is not needed?
     - {{ .Values.meta.mysqld.headlessClusterIp.name }}.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
-    name: selfsigned-issuer
+    name: {{ include "rondb.certManager.issuer" $ }}
     kind: Issuer
 ---
 {{ end }}

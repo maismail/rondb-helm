@@ -15,12 +15,19 @@ backupRemote
 {{- end -}}
 
 {{- define "rondb.mysqldPodname" -}}
-{{ printf "%s-0" $.Values.meta.mysqld.statefulSetName }}
+{{ printf "%s-0" $.Values.meta.mysqld.statefulSet.name }}
 {{- end -}}
 
 {{- define "rondb.mysqldServiceHostname" -}}
 {{ printf "%s.%s.svc.cluster.local"
         $.Values.meta.mysqld.service.name
+        $.Release.Namespace
+}}
+{{- end -}}
+
+{{- define "rondb.rdrsServiceHostname" -}}
+{{ printf "%s.%s.svc.cluster.local"
+        $.Values.meta.rdrs.serviceName
         $.Release.Namespace
 }}
 {{- end -}}
@@ -125,4 +132,24 @@ mysqld-exporter
 - {{ include "rondb.labels.rondbService.create-backup" $ }}
 - {{ include "rondb.labels.rondbService.restore-backup" $ }}
 - {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
+{{- end -}}
+
+#######
+# TLS #
+#######
+
+{{- define "rondb.certManager.issuer" -}}
+rondb-cert-issuer
+{{- end -}}
+
+{{- define "rondb.tls.rdrs.ingress.secretName" -}}
+rdrs-ingress-tls
+{{- end -}}
+
+{{- define "rondb.tls.rdrs.endToEnd.secretName" -}}
+rdrs-endToEnd-tls
+{{- end -}}
+
+{{- define "rondb.tls.mysqld.endToEnd.secretName" -}}
+mysqld-endToEnd-tls
 {{- end -}}
