@@ -21,29 +21,22 @@ spec:
 {{- $global := .Values.global }}
 {{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.rdrs "global" $global) | indent 6 }}
 {{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.rdrs "global" $global) | indent 6 }}
+      topologySpreadConstraints:
+      # Spread across nodes
+      - maxSkew: 3
+        topologyKey: kubernetes.io/hostname
+        # If the nodes don't have a hostname label, and we force this, the pods won't be scheduled
+        whenUnsatisfiable: DoNotSchedule
+        minDomains: 2
+        nodeAffinityPolicy: Honor
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            rondbService: {{ include "rondb.labels.rondbService.rdrs" $ }}
       affinity:
-        podAntiAffinity:
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # Preferred on different node
-          - weight: 90
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: rondbService
-                  operator: In
-                  values:
-                  - rdrs
-              topologyKey: kubernetes.io/hostname
-          # Preferred in different zone
-          - weight: 60
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: rondbService
-                  operator: In
-                  values:
-                  - rdrs
-              topologyKey: topology.kubernetes.io/zone
+{{- include "rondb.affinity.preferred.ndbdAZs" $ | indent 10 }}
       initContainers:
 {{ include "rondb.waitDatanodes" . | indent 6 }}
       containers:

@@ -49,7 +49,7 @@ meta:
         ipAddresses:
         - 127.0.0.1
 staticCpuManagerPolicy: false
-isMultiNodeCluster: false
+isMultiNodeCluster: true
 terminationGracePeriodSeconds: 60
 priorityClass: "ndb-high-priority"
 networkPolicy:

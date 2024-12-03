@@ -104,3 +104,18 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- define "rondb.restoreBackupPathPrefix" }}
 {{- .Values.restoreFromBackup.pathPrefix | default "rondb_backup" }}
 {{- end }}
+
+{{- define "rondb.affinity.preferred.ndbdAZs" }}
+# Try to place Pods into same AZs as data nodes for low latency
+- weight: 90
+  podAffinityTerm:
+    topologyKey: topology.kubernetes.io/zone
+    labelSelector:
+      matchExpressions:
+      - key: nodeGroup
+        operator: In
+        values:
+{{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
+        - {{ $nodeGroup | quote }}
+{{ end }}
+{{- end }}

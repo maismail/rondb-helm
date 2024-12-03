@@ -3,7 +3,7 @@
     "properties": {
         "isMultiNodeCluster": {
             "type": "boolean",
-            "description": "Whether the Kubernetes cluster has multiple nodes"
+            "description": "Whether the Kubernetes cluster has multiple nodes; this will affect affinities and add requirements to scheduling."
         },
         "staticCpuManagerPolicy": {
             "type": "boolean",

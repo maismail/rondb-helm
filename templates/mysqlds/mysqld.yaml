@@ -26,48 +26,22 @@ spec:
 {{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mysqld "global" $global) | indent 6 }}
 {{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mysqld "global" $global) | indent 6 }}
       serviceAccountName: {{ include "rondb.mysqldServiceAccountName" . }}
+      topologySpreadConstraints:
+      # Spread across nodes
+      - maxSkew: 3
+        topologyKey: kubernetes.io/hostname
+        # If the nodes don't have a hostname label, and we force this, the pods won't be scheduled
+        whenUnsatisfiable: DoNotSchedule
+        minDomains: 2
+        nodeAffinityPolicy: Honor
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            rondbService: {{ include "rondb.labels.rondbService.mysqld" $ }}
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # Try to place MySQLds onto hosts with data nodes running for low latency
-          # Risk: Some node groups may receive more MySQLds than others
-          - weight: 90
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: nodeGroup
-                  operator: In
-                  values:
-{{- range $nodeGroup := until ($.Values.clusterSize.numNodeGroups | int) }}
-                  - {{ $nodeGroup | quote }}
-{{ end }}
-              topologyKey: kubernetes.io/hostname
-        # We want the placement of MySQLds be primarily based on the node groups.
-        # The anti-affinities are in place to ensure that the MySQLds are at least
-        # spread between node group *replicas*. The risk remains of MySQLds being
-        # unevenly distributed between node groups.
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          # Preferred on different node
-          - weight: 80
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: rondbService
-                  operator: In
-                  values:
-                  - mysqld
-              topologyKey: kubernetes.io/hostname
-          # Preferred in different zone for HA
-          - weight: 40
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: rondbService
-                  operator: In
-                  values:
-                  - mysqld
-              topologyKey: topology.kubernetes.io/zone
+{{- include "rondb.affinity.preferred.ndbdAZs" $ | indent 10 -}}
 {{- include "rondb.SecurityContext" . | indent 6 }}
 {{- if .Values.priorityClass }}
       priorityClassName: {{ .Values.priorityClass | quote }}

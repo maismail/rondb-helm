@@ -91,12 +91,22 @@ spec:
 {{- $global := $.Values.global }}
 {{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" $.Values.nodeSelector.ndbmtd "global" $global) | indent 6 }}
 {{- include "hopsworkslib.tolerations" (dict "tolerations" $.Values.tolerations.ndbmtd "global" $global) | indent 6 }}
+      topologySpreadConstraints:
+      # Spread across zones
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        # If the nodes don't have a zone label, and we force this, the pods won't be scheduled
+        whenUnsatisfiable: ScheduleAnyway
+        nodeAffinityPolicy: Honor
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            nodeGroup: {{ $nodeGroup | quote }}
       affinity:
         podAntiAffinity:
 {{- if $.Values.isMultiNodeCluster }}
-          # Must be on different nodes
           requiredDuringSchedulingIgnoredDuringExecution:
-          # Replicas of same node group must be on different nodes
+          # Replicas of same node group *must* be on different nodes
           - labelSelector:
               matchExpressions:
                 - key: nodeGroup
@@ -104,7 +114,9 @@ spec:
                   values:
                   - {{ $nodeGroup | quote }}
             topologyKey: kubernetes.io/hostname
-          # Data nodes must be on different nodes than MGMds
+          # Data nodes *must* be on different nodes than MGMds
+          # When having e.g. 3 nodes, it is not worth having 3 replicas. This
+          # won't be scheduled.
           # Example, we have:
           # - a replication factor of 2
           # - 1 node group for simplicity
@@ -132,18 +144,9 @@ spec:
                   values:
                   - mgmd
               topologyKey: topology.kubernetes.io/zone
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: nodeGroup
-                  operator: In
-                  values:
-                  - {{ $nodeGroup | quote }}
-              topologyKey: topology.kubernetes.io/zone
-      {{ if $.Values.priorityClass -}}
+{{- if $.Values.priorityClass }}
       priorityClassName: {{ $.Values.priorityClass | quote }}
-      {{- end  }}
+{{- end  }}
       terminationGracePeriodSeconds: {{ $.Values.terminationGracePeriodSeconds }}
       initContainers:
 {{- if $.Values.restoreFromBackup.backupId }}
