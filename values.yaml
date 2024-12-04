@@ -34,6 +34,10 @@ meta:
     headlessClusterIpName: rdrs-cluster-ip
     annotations:
       consul.hashicorp.com/service-name: rdrs
+      prometheus.io/path: "/metrics"
+      prometheus.io/port: "4406"
+      prometheus.io/scheme: "https"
+      prometheus.io/scrape: "true"
     externalLoadBalancer:
       enabled: false
       class: null
