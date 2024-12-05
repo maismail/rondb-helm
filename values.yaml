@@ -4,8 +4,7 @@ meta:
     headlessClusterIp:
       name: headless-mgmds
       port: 1186
-      annotations:
-        consul.hashicorp.com/service-name: mgmd
+      annotations: {}
   mysqld:
     statefulSet:
       name: mysqlds
@@ -13,13 +12,12 @@ meta:
     service:
       name: mysqld
       port: 3306
-      annotations:
-        consul.hashicorp.com/service-name: mysql
-        consul.hashicorp.com/service-tags: 'onlinefs'
+      annotations: {}
     headlessClusterIp:
       name: headless-mysqlds
       port: 3306
     externalLoadBalancer:
+      name: mysqld-external
       enabled: false
       class: null
       annotations: {}
@@ -39,6 +37,7 @@ meta:
       prometheus.io/scheme: "https"
       prometheus.io/scrape: "true"
     externalLoadBalancer:
+      name: rdrs-external
       enabled: false
       class: null
       annotations: {}
@@ -56,6 +55,8 @@ staticCpuManagerPolicy: false
 isMultiNodeCluster: true
 terminationGracePeriodSeconds: 60
 priorityClass: "ndb-high-priority"
+enableSecurityContext: true
+serviceAccountAnnotations: {}
 networkPolicy:
   mgmds:
     enabled: true
@@ -63,6 +64,8 @@ networkPolicy:
   ndbmtds:
     enabled: true
     ingressSelectors: []
+imagePullSecrets: []
+imagePullPolicy: IfNotPresent
 # TODO: Consider using Chart.appVersion for tag instead
 images:
   rondb:
@@ -103,6 +106,14 @@ mysql:
     enabled: false
     username: "exporter"
     maxUserConnections: 3
+  users:
+  - username: hopsworksroot
+    host: "%"
+    privileges:
+      - database: "*"
+        tables:
+          "*":
+            - "ALL"
 clusterSize:
   activeDataReplicas: 1
   numNodeGroups: 1

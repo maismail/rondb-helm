@@ -86,11 +86,10 @@ spec:
         rondbService: {{ include "rondb.labels.rondbService.ndbmtd" $ }}
         nodeGroup: {{ $nodeGroup | quote }}
     spec:
-{{- include "hopsworkslib.imagePullSecrets" $ | indent 6 }}
-{{- include "rondb.SecurityContext" $ | indent 6 }}
-{{- $global := $.Values.global }}
-{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" $.Values.nodeSelector.ndbmtd "global" $global) | indent 6 }}
-{{- include "hopsworkslib.tolerations" (dict "tolerations" $.Values.tolerations.ndbmtd "global" $global) | indent 6 }}
+{{- include "rondb.imagePullSecrets" $ | indent 6 }}
+{{- include "rondb.PodSecurityContext" $ | indent 6 }}
+{{- include "rondb.nodeSelector" (dict "nodeSelector" $.Values.nodeSelector.ndbmtd) | indent 6 }}
+{{- include "rondb.tolerations" (dict "tolerations" $.Values.tolerations.ndbmtd) | indent 6 }}
       topologySpreadConstraints:
       # Spread across zones
       - maxSkew: 1
@@ -151,7 +150,7 @@ spec:
       initContainers:
 {{- if $.Values.restoreFromBackup.backupId }}
       - name: download-backup-to-restore
-        image: {{ include "rondb.toolboxImage" (dict "Values" $.Values "default" $.default "image" $.Values.images.toolbox) }}
+        image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
         # Setting resources in order to be in QoS class Guaranteed
         resources:
           limits:
@@ -204,8 +203,8 @@ spec:
 {{- end }}
       - name: mgmd-dependency-check
         image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
-        {{ include "hopsworkslib.commonContainerSecurityContext" $ | nindent 8 }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 8 }}
         # Setting resources in order to be in QoS class Guaranteed
         resources:
           limits:
@@ -264,8 +263,8 @@ spec:
       containers:
       - name: ndbmtd
         image: {{ include "image_address" (dict "image" $.Values.images.rondb) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
-        {{ include "hopsworkslib.commonContainerSecurityContext" $ | nindent 8 }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 8 }}
         command:
         - /bin/bash
         - -c
@@ -357,9 +356,9 @@ spec:
 {{- if $.Values.backups.enabled -}}
 {{/* This container is used to receive calls to push backups to object storage */}}
       - name: rclone-listener
-        image: {{ include "rondb.toolboxImage" (dict "Values" $.Values "default" $.default "image" $.Values.images.toolbox) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" $ | default "IfNotPresent" }}
-        {{ include "hopsworkslib.commonContainerSecurityContext" $ | nindent 8 }}
+        image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 8 }}
         command:
         - /bin/bash
         - -c

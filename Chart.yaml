@@ -24,6 +24,7 @@ home: https://www.rondb.com
 sources:
   - https://github.com/logicalclocks/rondb
   - https://github.com/logicalclocks/rondb-docker
+  - https://github.com/logicalclocks/rondb-helm
 maintainers:
   - name: Vincent Lohse
     email: vincent.lohse@hopsworks.ai
@@ -33,7 +34,4 @@ deprecated: false
 # annotations:
 #   example: A list of annotations keyed by name (optional).
 
-dependencies:
-- name: hopsworkslib
-  version: 0.1.0
-  repository: file://../hopsworkslib
+dependencies: []

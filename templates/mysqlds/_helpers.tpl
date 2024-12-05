@@ -7,10 +7,7 @@
 {{- end }}
 {{- end -}}
 
-{{- define "rondb.mysql.usersSecretName" -}}
-{{- if and .Values.global .Values.global._hopsworks -}}
-{{ include "hopsworkslib.mysql.usersSecretName" . }}
-{{- else -}}
-{{ .Values.mysql.credentialsSecretName }}
-{{- end -}}
+
+{{ define "rondb.mysql.getPasswordEnvVarName" -}}
+{{- printf "MYSQL_%s_PASSWORD" (required "Username is required" .username) | upper | replace "-" "_" -}}
 {{- end -}}

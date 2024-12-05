@@ -14,7 +14,7 @@ spec:
       labels:
         rondbService: {{ include "rondb.labels.rondbService.benchmark" $ }}
     spec:
-      {{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
+      {{- include "rondb.imagePullSecrets" . | indent 6 }}
       # So we collect errors in case of failures
       restartPolicy: Never
       initContainers:
@@ -22,7 +22,7 @@ spec:
       containers:
       - name: bench
         image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
         command:
         # - Alternatively: 'sleep infinity' for manual tests
         # - If we needed to change hostname & activate API slots, we could
@@ -62,7 +62,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 key: {{ .Values.benchmarking.mysqlUsername }}
-                name: {{ include "rondb.mysql.usersSecretName" . }}
+                name: {{ $.Values.mysql.credentialsSecretName }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.benchs }}
@@ -121,8 +121,8 @@ metadata:
   name: fetch-bench-results
   namespace: {{ .Release.Namespace }}
 spec:
-{{- include "rondb.SecurityContext" . | indent 2 }}
-{{- include "hopsworkslib.imagePullSecrets" . | indent 2 }}
+{{- include "rondb.PodSecurityContext" . | indent 2 }}
+{{- include "rondb.imagePullSecrets" . | indent 2 }}
   affinity:
     # We need to add this in the same node as benchs
     podAffinity:
@@ -136,8 +136,8 @@ spec:
         topologyKey: kubernetes.io/hostname
   containers:
   - name: idle-results-fetcher
-    image: {{ include "rondb.toolboxImage" (dict "Values" .Values "default" .default "image" .Values.images.toolbox) }}
-    imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+    image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
+    imagePullPolicy: {{ $.Values.imagePullPolicy }}
     command: ["/bin/sh", "-c", "while [ ! -f /var/run/done ]; do sleep 5; done"]
     resources:
       limits:

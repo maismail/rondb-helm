@@ -1,3 +1,12 @@
+{{- define "rondb.imagePullSecrets" -}}
+{{- if $.Values.imagePullSecrets }}
+imagePullSecrets:
+{{- range $.Values.imagePullSecrets }}
+  - name: {{ .name }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 # Could be that there is no repository (e.g. docker.io/alpine)
 {{- define "image_repository" -}}
 {{- if or (not .image.repository) (eq .image.repository "") -}}
@@ -10,31 +19,52 @@
 {{ .image.registry }}/{{ include "image_repository" (dict "image" .image ) }}{{ .image.name }}:{{ .image.tag }}
 {{- end -}}
 
-{{- define "rondb.toolboxImage" -}}
-{{- if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.toolbox }}
-{{- include "hopsworkslib.toolboxImage" (dict "Values" .Values "default" .default) }}
-{{- else -}}
-{{ include "image_address" (dict "image" .Values.images.toolbox) }}
-{{- end -}}
-{{- end -}}
-
-{{- define "rondb.SecurityContext" }}
-{{- if or (include "hopsworkslib.withoutHopsworks" .) (include "hopsworkslib.securityContextEnabled" .) }}
-# This corresponds to the MySQL user/group which is created in the Dockerfile
-# Beware that a lot of files & directories are created in the RonDB Dockerfile, which belong
-# to the MySQL user/group.
+{{- define "rondb.PodSecurityContext" }}
+{{- if $.Values.enableSecurityContext }}
 securityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
-{{- end -}}
 {{- end }}
+{{- end }}
+
+{{- define "rondb.ContainerSecurityContext" }}
+{{- if $.Values.enableSecurityContext }}
+securityContext:
+  allowPrivilegeEscalation: false
+  privileged: false
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: null
+  seccompProfile:
+    type: RuntimeDefault
+{{- end }}
+{{- end }}
+
+{{- define "rondb.nodeSelector" -}}
+{{- if and .nodeSelector (not (empty .nodeSelector) )}}
+nodeSelector: {{ .nodeSelector | toYaml | nindent 2 }}
+{{- end }}
+{{- end -}}
+
+{{- define "rondb.tolerations" -}}
+{{- if and .tolerations (not (empty .tolerations) )}}
+tolerations: {{ .tolerations | toYaml | nindent 2 }}
+{{- end }}
+{{- end -}}
+
+{{- define "rondb.serviceAccountAnnotations" -}}
+{{- if $.Values.serviceAccountAnnotations }}
+annotations: {{ $.Values.serviceAccountAnnotations | toYaml | nindent 2 }}
+{{- end }}
+{{- end -}}
 
 {{ define "rondb.storageClass.default" -}}
 {{ if .Values.resources.requests.storage.classes.default  }}
 storageClassName: {{ .Values.resources.requests.storage.classes.default | quote }}
-{{- else if and .Values.global .Values.global._hopsworks .Values.global._hopsworks.storageClassName }}
-storageClassName: {{  .Values.global._hopsworks.storageClassName | quote }}
 {{ end }}
 {{- end }}
 
@@ -49,8 +79,8 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- define "rondb.waitDatanodes" -}}
 - name: wait-datanodes-dependency
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
-  {{ include "hopsworkslib.commonContainerSecurityContext" . | nindent 2 }}
-  imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 2 }}
+  imagePullPolicy: {{ $.Values.imagePullPolicy }}
   command:
   - /bin/bash
   - -c
@@ -68,7 +98,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
 {{- define "rondb.apiInitContainer" -}}
 - name: cluster-dependency-check
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
-  imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
+  imagePullPolicy: {{ $.Values.imagePullPolicy }}
   command:
   - /bin/bash
   - -c
@@ -85,7 +115,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.diskColumns | qu
     valueFrom:
       secretKeyRef:
         key: {{ .Values.benchmarking.mysqlUsername }}
-        name: {{ include "rondb.mysql.usersSecretName" . }}
+        name: {{ $.Values.mysql.credentialsSecretName }}
 {{- end }}
 
 {{- define "rondb.arrayToCsv" -}}

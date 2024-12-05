@@ -16,15 +16,14 @@ spec:
         app: rondb
         rondbService: {{ include "rondb.labels.rondbService.mysqld-exporter" $ }}
     spec:
-{{- include "hopsworkslib.imagePullSecrets" . | indent 6 }}
-{{- $global := .Values.global }}
-{{- include "hopsworkslib.nodeSelector" (dict "nodeSelector" .Values.nodeSelector.mysqld "global" $global) | indent 6 }}
-{{- include "hopsworkslib.tolerations" (dict "tolerations" .Values.tolerations.mysqld "global" $global) | indent 6 }}
+{{- include "rondb.imagePullSecrets" . | indent 6 }}
+{{- include "rondb.nodeSelector" (dict "nodeSelector" $.Values.nodeSelector.mysqld) | indent 6 }}
+{{- include "rondb.tolerations" (dict "tolerations" $.Values.tolerations.mysqld) | indent 6 }}
       containers:
       - name: mysqld-exporter
         image:  {{ include "image_address" (dict "image" .Values.images.mysqldExporter) }}
-        imagePullPolicy: {{ include "hopsworkslib.imagePullPolicy" . | default "IfNotPresent" }}
-        {{- include "hopsworkslib.commonContainerSecurityContext" . | nindent 8 }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 8 }}
         resources:
           limits:
             cpu: {{ .Values.resources.limits.cpus.mysqldExporters }}
@@ -43,7 +42,7 @@ spec:
           - name: MYSQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ include "rondb.mysql.usersSecretName" . }}
+                name: {{ $.Values.mysql.credentialsSecretName }}
                 key: {{ .Values.mysql.exporter.username }}
           - name: MYSQL_HOST
             value: {{ include "rondb.mysqldServiceHostname" . }}
