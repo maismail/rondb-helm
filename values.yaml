@@ -8,7 +8,13 @@ meta:
   mysqld:
     statefulSet:
       name: mysqlds
-      endToEndTls: false
+      endToEndTls:
+        enabled: false
+        secretName: mysqld-end-to-end-tls
+        supplyOwnSecret: false
+        certfileName: tls.crt
+        keyfileName: tls.key
+        cafileName: null
     clusterIp:
       name: mysqld
       port: 3306
@@ -28,7 +34,13 @@ meta:
   binlogServers:
     statefulSet:
       name: mysqld-binlog-servers
-      endToEndTls: false
+      endToEndTls:
+        enabled: false
+        secretName: binlog-end-to-end-tls
+        supplyOwnSecret: false
+        certfileName: tls.crt
+        keyfileName: tls.key
+        cafileName: null
     headlessClusterIp:
       name: headless-binlog-servers
       port: 3306
@@ -42,14 +54,26 @@ meta:
   replicaAppliers:
     statefulSet:
       name: mysqld-replica-appliers
-      endToEndTls: false
+      endToEndTls:
+        enabled: false
+        secretName: replica-applier-end-to-end-tls
+        supplyOwnSecret: false
+        certfileName: tls.crt
+        keyfileName: tls.key
+        cafileName: null
     headlessClusterIp:
       name: headless-replica-appliers
       port: 3306
   rdrs:
     statefulSet:
       name: rdrs
-      endToEndTls: false
+      endToEndTls:
+        enabled: false
+        secretName: rdrs-end-to-end-tls
+        supplyOwnSecret: false
+        certfileName: tls.crt
+        keyfileName: tls.key
+        cafileName: null
     clusterIpName: rdrs
     headlessClusterIpName: rdrs-cluster-ip
     annotations:
@@ -282,6 +306,7 @@ globalReplication:
     enabled: false
     replicateFrom:
       clusterNumber: 2
+      useTlsConnection: false
       binlogServerHosts: []
       ignoreDatabases: []
       ignoreTables: []

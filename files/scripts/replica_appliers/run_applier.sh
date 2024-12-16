@@ -52,6 +52,11 @@ CHANGE REPLICATION SOURCE TO
     SOURCE_LOG_FILE="${BINLOG_FILE}",
     -- The starting position on the source MySQL Server
     SOURCE_LOG_POS=${BINLOG_POSITION},
+{{- if $.Values.globalReplication.secondary.replicateFrom.useTlsConnection }}
+    -- WARNING: This is needed if the binlog servers enforce SSL
+    SOURCE_SSL=1,
+{{- end }}
+
     -- Ignore replication from server IDs in backup cluster to avoid circular replication
     IGNORE_SERVER_IDS=(${IGNORE_SERVER_IDS});
 EOF

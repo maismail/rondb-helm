@@ -22,7 +22,8 @@ meta:
       annotations: *dummyAnnotations
   mysqld:
     statefulSet:
-      endToEndTls: true
+      endToEndTls:
+        enabled: true
     service:
       annotations: *dummyAnnotations
     externalLoadBalancer:
@@ -32,17 +33,20 @@ meta:
     addSysNiceCapability: true
   binlogServers:
     statefulSet:
-      endToEndTls: true
+      endToEndTls:
+        enabled: true
     externalLoadBalancers:
       enabled: true
       class: bla
       annotations: *dummyAnnotations
   replicaAppliers:
     statefulSet:
-      endToEndTls: true
+      endToEndTls:
+        enabled: true
   rdrs:
     statefulSet:
-      endToEndTls: true
+      endToEndTls:
+        enabled: true
     annotations: *dummyAnnotations
     externalLoadBalancer:
       enabled: true
@@ -148,6 +152,7 @@ globalReplication:
   secondary:
     enabled: true
     replicateFrom:
+      useTlsConnection: true
       binlogServerHosts: *dummyStringArray
       ignoreDatabases: *dummyStringArray
       ignoreTables: *dummyStringArray

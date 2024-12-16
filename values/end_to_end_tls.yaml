@@ -1,0 +1,21 @@
+meta:
+  mysqld:
+    statefulSet:
+      endToEndTls:
+        enabled: true
+  binlogServers:
+    statefulSet:
+      endToEndTls:
+        enabled: true
+  replicaAppliers:
+    statefulSet:
+      endToEndTls:
+        enabled: true
+  rdrs:
+    statefulSet:
+      endToEndTls:
+        enabled: true
+globalReplication:
+  secondary:
+    replicateFrom:
+      useTlsConnection: true
