@@ -1,4 +1,6 @@
-{{- if .Values.mysql.exporter.enabled }}
+# Copyright (c) 2024-2024 Hopsworks AB. All rights reserved.
+
+{{ if .Values.mysql.exporter.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
