@@ -7,7 +7,7 @@ on:
   push:
     tags:
       # Semantic versioning; must be equal to version in Chart.yaml
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 # This cancels any previous job from the same PR if the PR has been updated.
 # This cancel-in-progress only works per PR (thus, two different PRs wont be cancelled).
@@ -27,11 +27,15 @@ jobs:
         - name: Checkout main repo
           uses: actions/checkout@v4
 
+        - run: |
+            echo "GH ref:       ${{ github.ref }}"
+            echo "GH ref_name:  ${{ github.ref_name }}"
+
         - name: Check copyright header
           run: ./.github/update_copyright.sh
 
         - name: Check that Git tag matches Chart.yaml version
-          if: github.repository == 'logicalclocks/rondb-helm' && github.ref_name == 'main' && startsWith(github.ref, 'refs/tags/')
+          if: github.repository == 'logicalclocks/rondb-helm' && startsWith(github.ref, 'refs/tags/')
           run: |
             TAG=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
             CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
@@ -149,6 +153,7 @@ jobs:
 
   test-lifecycle:
     needs: [benchmark-and-stability]
+    name: Test Global Replication with backup/restore
     if: github.repository == 'logicalclocks/rondb-helm'
     runs-on: [self-hosted, ARM64]
     env:
@@ -253,7 +258,7 @@ jobs:
 
   publish:
     needs: [test-lifecycle]
-    if: github.repository == 'logicalclocks/rondb-helm' && github.ref_name == 'main' && startsWith(github.ref, 'refs/tags/')
+    if: github.repository == 'logicalclocks/rondb-helm' && startsWith(github.ref, 'refs/tags/')
     name: Publish Helm chart
     runs-on: ubuntu-latest
     permissions:
