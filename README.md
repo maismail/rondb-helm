@@ -25,25 +25,26 @@ See [TODO](docs/todo.md) for this.
 ### Optional: Set up cloud object storage for backups
 
 Cloud object storage is required for creating backups and restoring from them. Periodical backups can be
-enabled using `--set backups.enabled`. These will be placed into cloud object storage.
+enabled using `--set backups.enabled`. These will be placed into cloud object storage. Restoring from a backup
+can be activated (at cluster start) using `--set restoreFromBackup.backupId=<backup-id>`. This will assume the
+backup is placed in the defined object storage.
 
 _Authentication info:_ When running Kubernetes within a cloud provider (e.g. EKS), authentication can work implicitly via IAM roles.
 This is most secure and one should not have to worry about rotating them. If one is not running in the cloud
 (e.g. Minikube or on-prem K8s clusters), one can create Secrets with object storage credentials.
 
-_Example S3_: Create an S3 bucket and see this to have access to it: https://github.com/awslabs/mountpoint-s3-csi-driver/blob/main/docs/install.md#configure-access-to-s3.
+Examples creating object storage:
+* In-cluster MinIO: Install MinIO controller and run `./test_scripts/setup_minio.sh`
+* S3: Create an S3 bucket and see this to have access to it: https://github.com/awslabs/mountpoint-s3-csi-driver/blob/main/docs/install.md#configure-access-to-s3.
 
 ### Run cluster
 
 ```bash
-helm lint
-helm template .
-
 RONDB_NAMESPACE=rondb-default
 kubectl create namespace $RONDB_NAMESPACE
 
 # If periodical backups are enabled, add access to object storage.
-# If using AWS S3:
+# If using AWS S3 without IAM roles:
 kubectl create secret generic aws-credentials \
     --namespace=$RONDB_NAMESPACE \
     --from-literal "key_id=${AWS_ACCESS_KEY_ID}" \
@@ -87,6 +88,7 @@ helm delete --namespace=$RONDB_NAMESPACE my-rondb
 # Remove other related resources (non-namespaced objects not removed here e.g. PriorityClass)
 kubectl delete namespace $RONDB_NAMESPACE --timeout=60s
 
+# If dependencies were set up first, take them down again
 source ./standalone_deps.sh
 destroy_deps
 ```
@@ -106,11 +108,13 @@ Ingress towards MySQLds or RDRSs can be tested using the following steps:
     `curl -i --insecure https://rondb.com/0.1.0/ping`
     This should reach the RDRS and return 200.
 5. Connect to MySQLd from host (needs MySQL client installed):
+    ```bash
     mysqladmin -h rondb.com \
         --protocol=tcp \
         --connect-timeout=3 \
         --ssl-mode=REQUIRED \
         ping
+    ```
 
 ## Optimizations
 
