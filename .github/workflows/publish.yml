@@ -9,6 +9,7 @@ on:
 jobs:
   publish:
     name: Publish Helm chart
+    if: github.repository == 'logicalclocks/rondb-helm'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,7 +34,6 @@ jobs:
         fi
 
     - name: Check that Git tag matches Chart.yaml version
-      if: github.repository == 'logicalclocks/rondb-helm' && startsWith(github.ref, 'refs/tags/')
       run: |
         TAG=$(echo ${{ github.ref_name }} | sed 's/v//')
         CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
@@ -54,13 +54,23 @@ jobs:
         git config user.name "$GITHUB_ACTOR"
         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-    # We're using a simple main branch where every git push tag is the new latest version
-    # and we don't overwrite Chart versions.
-    - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.6.0
-      with:
-        mark_as_latest: true
-        pages_branch: gh-pages
-        skip_existing: true
+    - name: Package Helm Charts
+      run: helm package . --destination ./charts/
+
+    - name: Checkout gh-pages branch
+      run: |
+        git fetch origin gh-pages
+        git checkout gh-pages
+
+    # We have to use this url because the org logicalclocks already has a GH page
+    - name: Generate index.yaml
+      run: helm repo index . --url https://docs.hopsworks.ai/rondb-helm
+
+    - name: Commit and Push to gh-pages
+      run: |
+        git add ./charts/*
+        git add index.yaml
+        git commit -m "Release RonDB Helm chart ${{ github.ref_name }}"
+        git push origin gh-pages
       env:
-        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
