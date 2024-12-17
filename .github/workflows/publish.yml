@@ -57,14 +57,15 @@ jobs:
     - name: Package Helm Charts
       run: helm package . --destination ./charts/
 
+    # This will fail if the Helm package already exists; But Git tags can't
+    # be duplicated anyways and a release shouldn't be overwritten either.
     - name: Checkout gh-pages branch
       run: |
         git fetch origin gh-pages
         git checkout gh-pages
 
-    # We have to use this url because the org logicalclocks already has a GH page
-    - name: Generate index.yaml
-      run: helm repo index . --url https://docs.hopsworks.ai/rondb-helm
+    - name: Generate index.yaml corresponding to the existing charts
+      run: helm repo index . --url https://logicalclocks.github.io/rondb-helm/
 
     - name: Commit and Push to gh-pages
       run: |
