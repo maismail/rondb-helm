@@ -8,18 +8,6 @@
 - Create backups & restore from backups
 - Global Replication
 
-## Backups
-
-See [Backups](docs/backups.md) for this.
-
-## CI (GitHub Actions)
-
-See [CI](docs/github_actions.md) for this.
-
-## TODO
-
-See [TODO](docs/todo.md) for this.
-
 ## Quickstart
 
 ### Optional: Set up cloud object storage for backups
@@ -93,6 +81,10 @@ source ./standalone_deps.sh
 destroy_deps
 ```
 
+## Backups
+
+See [Backups](docs/backups.md) for this.
+
 ## Global Replication
 
 See [Global Replication](docs/global_replication.md) for this.
@@ -134,50 +126,26 @@ minikube start \
 
 Then in the values file, set `.Values.staticCpuManagerPolicy=true`.
 
-## Startup steps (including restoring backup & global replication)
+## CI (GitHub Actions)
 
-Currently, we are running the following steps:
+See [CI](docs/github_actions.md) for this.
 
-1. **Stateful Set** - Run data nodes:
-   1. (If restoring) InitContainer: Download native backups on data nodes (TODO: Do this in Job A)
-   2. Main container: Run data nodes
-2. (If restoring) **Job A** - Restore binary data:
-   1. Wait for data nodes to start up
-   2. Create *temporary* MySQLd that connects to the data nodes and
-        creates system tables (important!). Otherwise, system tables
-        will be restored by native backup.
-   3. TODO: Download native backups on data nodes here instead
-   4. Run `ndb_restore --restore-meta --disable-indexes` on one ndbmtd
-   5. Run `ndb_restore --restore-data` on all ndbmtds
-   6. Run `ndb_restore --rebuild-indexes` on one ndbmtd
-   7. (If global secondary cluster) Run `ndb_restore --restore-epoch` on one ndbmtd
-   8. Remove native backups on all ndbmtds
-3. (If global primary cluster) **Stateful Set** - Run MySQL binlog servers:
-   1. InitContainer: Initialize MySQLd data dir (no connection needed)
-   2. Wait for data nodes to start up
-   3. (If restoring) Wait for Job A
-   4. Main container: Run MySQLd replication servers with networking
-       - Allow listening to the restore of a backup
-4.  **Job B** - Initialize MySQLds:
-    1. (If restoring) Download MySQL metadata backup
-    2. Wait for data nodes to start up
-    3. (If restoring) Wait for Job A
-    4. (If global primary cluster) Wait for binlog servers
-    5. Spawn *temporary* MySQLd that:
-       1. (If restoring) Restores MySQL metadata backup
-       2. Applies Helm deployment SQL init files
-       3. Applies user-applied SQL init files
-5. (If global secondary cluster) **Stateful Set** - Run MySQL replica applier
-   1. InitContainer: Initialize MySQLd data dir (no connection needed)
-   2. Wait for Job B
-   3. Main containers:
-      * MySQLd
-      * Replication operator; script to choose binlog server & start/stop replication
-6. **Stateful Set** - Run MySQL servers:
-   1. InitContainer: Initialize MySQLd data dir (no connection needed)
-   2. Wait for Job B
-   3. Main container: Run MySQLds with networking
+## Internal startup
 
-*Note:* Global primary and secondary cluster refer to global replication. This is asynchronous
-replication between MySQL replication servers of two clusters. MySQL binlog servers in the
-primary cluster replicate towards the MySQL replica appliers in the secondary cluster.
+See [Internal startup steps](docs/internal_startup.md) for this.
+
+## Releasing Helm chart
+
+The Helm chart version is set in the Chart.yaml file under `version`. Helm requires semantic versioning for this, and appending text is allowed as well (e.g. `0.1.0-dev`).
+
+Let's say our Chart.yaml now has version `0.1.0`. We have not released this version yet. The expected workflow will be as follows:
+1. Commit arbitrary changes to main
+2. Run a workflow dispatch to release the version `0.1.0-dev`. This can be referenced in other Helmcharts.
+3. If the Helmchart version is deemed stable, one runs:
+   1. `git tag v0.1.0` on the main branch (the same version as in the Chart.yaml, plus prepending a `v`)
+   2. `git push origin tag v0.1.0`; this will trigger a Helm chart release with version `0.1.0`
+4. Bump the version in the Chart.yaml to `0.1.1`
+
+## TODO
+
+See [TODO](docs/todo.md) for this.
