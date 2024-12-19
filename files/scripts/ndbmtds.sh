@@ -4,7 +4,7 @@
 
 # Requires to calculate Node Id based on Pod name and Node Group
 
-# Equivalent to replication factor of pod
+# Equivalent to replication factor of Pod
 POD_ID=$(echo $POD_NAME | grep -o '[0-9]\+$')
 
 echo "[K8s Entrypoint ndbmtd] Running Pod ID: $POD_ID in Node Group: $NODE_GROUP"
@@ -15,6 +15,20 @@ NODE_ID=$(($NODE_ID_OFFSET+$POD_ID+1))
 echo "[K8s Entrypoint ndbmtd] Running Node Id: $NODE_ID"
 
 MGM_CONNECTSTRING=$MGMD_HOST:1186
+
+# Activating node slots is idempotent; it can however take some seconds.
+# Important to run this in main container. If a probe kills the container,
+# this script will deactivate the node id. But only the main container will be
+# restarted. This is because Stateful Sets only support `restartPolicy: Always`.
+(
+    set -e
+    echo "Activating node id $NODE_ID via MGM client"
+    ndb_mgm --ndb-connectstring=$MGM_CONNECTSTRING -e "$NODE_ID activate"
+)
+
+# This is already run in the initContainer; doing this here as a sanity check.
+# A main container restart should not change the Pod's IP address.
+{{ include "rondb.resolveOwnIp" $ }}
 
 handle_sigterm() {
     echo "[K8s Entrypoint ndbmtd] SIGTERM received, deactivating node id $NODE_ID via MGM client"
@@ -44,7 +58,9 @@ handle_sigterm() {
     done
 }
 
-# We'll stop the data node by deactivating it insetad of shutting it down
+# We'll stop the data node by deactivating it instead of shutting it down.
+# This will NOT be triggered if the data node fails due to an error.
+# It WILL be triggered if the liveness probe fails or the Pod is updated/deleted/re-scheduled.
 trap handle_sigterm SIGTERM
 
 # Creating symlinks to the persistent volume
