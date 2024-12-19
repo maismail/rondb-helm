@@ -210,6 +210,8 @@ rondbConfig:
   RdrsMetadataSlotsPerNode: 1
   NdbmtdMemoryOverheadMiB: 1024
   InitialTablespaceSizeGiB: -1
+  TransactionInactiveTimeout: 15000
+  TransactionDeadlockDetectionTimeout: 1500
 rdrs:
   externalMetadataCluster:
     slotsPerNode: 1
