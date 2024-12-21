@@ -1,9 +1,28 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema#",
     "properties": {
+        "imagePullPolicy": {
+            "type": "string",
+            "description": "The Kubernetes image pull policy",
+            "default": "IfNotPresent"
+        },
+        "imagePullSecrets": {
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the Secret"
+                    }
+                }
+            }
+        },
         "isMultiNodeCluster": {
             "type": "boolean",
-            "description": "Whether the Kubernetes cluster has multiple nodes; this will affect affinities and add requirements to scheduling."
+            "description": "Whether the Kubernetes cluster has multiple nodes; this will affect affinities and add requirements to scheduling.",
+            "default": true
         },
         "staticCpuManagerPolicy": {
             "type": "boolean",
@@ -15,6 +34,18 @@
             "description": "TerminationGracePeriodSeconds for data nodes. For debugging. When removing the *entire* cluster, taking down data nodes will hang, since they try to contact the MGMd on shutdown. Hence, this is a way of shortening this wait.",
             "default": 60,
             "minimum": 10
+        },
+        "priorityClass": {
+            "type": "string",
+            "default": "rondb-high-priority"
+        },
+        "enableSecurityContext": {
+            "type": "boolean",
+            "default": true
+        },
+        "serviceAccountAnnotations": {
+            "type": "object",
+            "default": {}
         },
         "networkPolicy": {
             "type": "object",
@@ -29,6 +60,7 @@
                         },
                         "ingressSelectors": {
                             "type": "array",
+                            "default": [],
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -53,6 +85,7 @@
                         },
                         "ingressSelectors": {
                             "type": "array",
+                            "default": [],
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -76,16 +109,23 @@
                     "type": "object",
                     "properties": {
                         "statefulSetName": {
-                            "type": "string"
+                            "type": "string",
+                            "default": "mgmds"
                         },
                         "headlessClusterIp": {
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "headless-mgmds"
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "default": 1186
                                 },
                                 "annotations": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "default": {}
                                 }
                             },
                             "required": [
@@ -98,6 +138,20 @@
                         "headlessClusterIp"
                     ]
                 },
+                "ndbmtd": {
+                    "type": "object",
+                    "properties": {
+                        "statefulSet": {
+                            "type": "object",
+                            "properties": {
+                                "podAnnotations": {
+                                    "type": "object",
+                                    "default": {}
+                                }
+                            }
+                        }
+                    }
+                },
                 "mysqld": {
                     "type": "object",
                     "properties": {
@@ -105,7 +159,8 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "mysqlds"
                                 },
                                 "endToEndTls": {
                                     "$ref": "#/$defs/endToEndTls"
@@ -120,13 +175,12 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "headless-mysqlds"
                                 },
                                 "port": {
-                                    "type": "integer"
-                                },
-                                "annotations": {
-                                    "type": "object"
+                                    "type": "integer",
+                                    "default": 3306
                                 }
                             },
                             "required": [
@@ -138,13 +192,16 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "mysqld"
                                 },
                                 "port": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "default": 3306
                                 },
                                 "annotations": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "default": {}
                                 }
                             },
                             "required": [
@@ -153,16 +210,49 @@
                             ]
                         },
                         "externalLoadBalancer": {
-                            "$ref": "#/$defs/externalLoadBalancer"
+                            "type": "object",
+                            "description": "Configuration for load balancer service to be used for external access",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "default": "mysqld-external"
+                                },
+                                "class": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "default": null
+                                },
+                                "annotations": {
+                                    "type": "object",
+                                    "description": "Cloud provider load balancer specific annotations.",
+                                    "default": {}
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "description": "Port to expose the service on",
+                                    "default": 3306
+                                }
+                            }
                         },
                         "exporter": {
                             "type": "object",
                             "description": "Configuration for mysqld exporter",
                             "properties": {
                                 "metricsPort": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "default": 9104
                                 }
                             }
+                        },
+                        "addSysNiceCapability": {
+                            "type": "boolean",
+                            "default": true
                         }
                     },
                     "required": [
@@ -174,14 +264,34 @@
                 "rdrs": {
                     "type": "object",
                     "properties": {
-                        "clusterIpName": {
-                            "type": "string"
+                        "clusterIp": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "default": "rdrs"
+                                },
+                                "annotations": {
+                                    "type": "object",
+                                    "default": {
+                                        "consul.hashicorp.com/service-name": "rdrs",
+                                        "prometheus.io/path": "/metrics",
+                                        "prometheus.io/port": "4406",
+                                        "prometheus.io/scheme": "https",
+                                        "prometheus.io/scrape": "true"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ]
                         },
                         "statefulSet": {
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "rdrs"
                                 },
                                 "endToEndTls": {
                                     "$ref": "#/$defs/endToEndTls"
@@ -193,45 +303,81 @@
                             ]
                         },
                         "headlessClusterIpName": {
-                            "type": "string"
+                            "type": "string",
+                            "default": "rdrs-cluster-ip"
                         },
                         "externalLoadBalancer": {
-                            "$ref": "#/$defs/externalLoadBalancer"
+                            "type": "object",
+                            "description": "Configuration for load balancer service to be used for external access",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "default": "rdrs-external"
+                                },
+                                "class": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "default": null
+                                },
+                                "annotations": {
+                                    "type": "object",
+                                    "description": "Cloud provider load balancer specific annotations.",
+                                    "default": {}
+                                }
+                            }
                         },
                         "ingress": {
                             "type": "object",
                             "description": "Configuration of Ingress for RDRS",
                             "properties": {
                                 "enabled": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "default": false
                                 },
                                 "class": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "nginx"
                                 },
                                 "useDefaultBackend": {
                                     "type": "boolean",
-                                    "description": "Whether to use the RDRS as a default backend for the Ingress; this makes it reachable without specifying a subdomain; i.e. an IP can be used instead."
+                                    "description": "Whether to use the RDRS as a default backend for the Ingress; this makes it reachable without specifying a subdomain; i.e. an IP can be used instead.",
+                                    "default": true
                                 },
                                 "dnsNames": {
                                     "type": "array",
                                     "items": {
                                         "type": "string",
                                         "description": "DNS names used for Ingress rules. These will also be used in the TLS certificate."
-                                    }
+                                    },
+                                    "default": [],
+                                    "examples": [
+                                        "rondb.com"
+                                    ]
                                 },
                                 "tls": {
                                     "type": "object",
                                     "properties": {
                                         "enabled": {
                                             "type": "boolean",
-                                            "description": "WARN: Nginx-ingress will always use encryption even if this is disabled. By enabling this, we simply have more control over the TLS Secret. The TLS Secrets are placed onto the Ingress controller instance. Ingress TLS is currently only supported with cert-manager (RonDB-standalone)"
+                                            "description": "WARN: Nginx-ingress will always use encryption even if this is disabled. By enabling this, we simply have more control over the TLS Secret. The TLS Secrets are placed onto the Ingress controller instance. Ingress TLS is currently only supported with cert-manager (RonDB-standalone)",
+                                            "default": true
                                         },
                                         "ipAddresses": {
                                             "type": "array",
                                             "items": {
                                                 "type": "string",
                                                 "description": "This will work if the a default backend is activated for the Ingress. A value here can be the external IP of the Ingress Controller"
-                                            }
+                                            },
+                                            "default": [],
+                                            "examples": [
+                                                "127.0.0.1"
+                                            ]
                                         }
                                     }
                                 }
@@ -239,7 +385,7 @@
                         }
                     },
                     "required": [
-                        "clusterIpName",
+                        "clusterIp",
                         "statefulSet",
                         "headlessClusterIpName"
                     ]
@@ -251,7 +397,8 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "mysqld-binlog-servers"
                                 },
                                 "endToEndTls": {
                                     "$ref": "#/$defs/endToEndTls"
@@ -266,10 +413,12 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "headless-binlog-servers"
                                 },
                                 "port": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "default": 3306
                                 }
                             },
                             "required": [
@@ -278,7 +427,35 @@
                             ]
                         },
                         "externalLoadBalancers": {
-                            "$ref": "#/$defs/externalLoadBalancer"
+                            "type": "object",
+                            "description": "One LoadBalancer per binlog server",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "namePrefix": {
+                                    "type": "string",
+                                    "default": "binlog-server"
+                                },
+                                "class": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "default": null
+                                },
+                                "annotations": {
+                                    "type": "object",
+                                    "description": "Cloud provider load balancer specific annotations.",
+                                    "default": {}
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "description": "Port to expose the service on",
+                                    "default": 3306
+                                }
+                            }
                         }
                     },
                     "required": [
@@ -293,7 +470,8 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "mysqld-replica-appliers"
                                 },
                                 "endToEndTls": {
                                     "$ref": "#/$defs/endToEndTls"
@@ -308,10 +486,12 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "default": "headless-replica-appliers"
                                 },
                                 "port": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "default": 3306
                                 }
                             },
                             "required": [
@@ -337,16 +517,88 @@
             "description": "Information for Docker images used in the cluster",
             "properties": {
                 "rondb": {
-                    "$ref": "#/$defs/image"
+                    "type": "object",
+                    "properties": {
+                        "registry": {
+                            "type": "string",
+                            "default": "docker.io"
+                        },
+                        "repository": {
+                            "type": "string",
+                            "default": "hopsworks"
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "rondb"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "22.10.7-0.7"
+                        }
+                    }
                 },
                 "toolbox": {
-                    "$ref": "#/$defs/image"
+                    "type": "object",
+                    "properties": {
+                        "registry": {
+                            "type": "string",
+                            "default": "docker.io"
+                        },
+                        "repository": {
+                            "type": "string",
+                            "default": "hopsworks"
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "hwutils"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "0.7"
+                        }
+                    }
                 },
                 "dataValidation": {
-                    "$ref": "#/$defs/image"
+                    "type": "object",
+                    "properties": {
+                        "registry": {
+                            "type": "string",
+                            "default": "docker.io"
+                        },
+                        "repository": {
+                            "type": "string",
+                            "default": ""
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "python"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "3.12-slim"
+                        }
+                    }
                 },
                 "mysqldExporter": {
-                    "$ref": "#/$defs/image"
+                    "type": "object",
+                    "properties": {
+                        "registry": {
+                            "type": "string",
+                            "default": "docker.hops.works"
+                        },
+                        "repository": {
+                            "type": "string",
+                            "default": "hopsworks"
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "mysqld_exporter"
+                        },
+                        "tag": {
+                            "type": "string",
+                            "default": "0.11.2"
+                        }
+                    }
                 }
             },
             "required": [
@@ -361,7 +613,13 @@
             "properties": {
                 "sqlInitContent": {
                     "type": "object",
-                    "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands."
+                    "description": "SQL to run *only once* at cluster startup. Try to make these scripts idempotent, in case they are re-run by accident. Do so by e.g. using `IF NOT EXISTS` in the SQL commands.",
+                    "default": {},
+                    "examples": [
+                        {
+                            "createMyUser": "CREATE USER foo IF NOT EXISTS;"
+                        }
+                    ]
                 },
                 "supplyOwnSecret": {
                     "type": "boolean",
@@ -370,7 +628,8 @@
                 },
                 "clusterUser": {
                     "type": "string",
-                    "description": "The MySQL user for K8s probes, benchmarks and for the standard my.cnf file."
+                    "description": "The MySQL user for K8s probes, benchmarks and for the standard my.cnf file.",
+                    "default": "helm"
                 },
                 "exporter": {
                     "type": "object",
@@ -381,20 +640,24 @@
                             "default": false
                         },
                         "username": {
-                            "type": "string"
+                            "type": "string",
+                            "default": "exporter"
                         },
                         "maxUserConnections": {
-                            "type": "integer"
+                            "type": "integer",
+                            "default": 3
                         }
                     }
                 },
                 "credentialsSecretName": {
                     "type": "string",
                     "description": "Secret name for MySQL users' passwords",
-                    "minLength": 1
+                    "minLength": 1,
+                    "default": "mysql-passwords"
                 },
                 "users": {
                     "type": "array",
+                    "default": [],
                     "items": {
                         "type": "object",
                         "properties": {
@@ -406,7 +669,10 @@
                             "host": {
                                 "type": "string",
                                 "description": "The host from which the MySQL user can connect.",
-                                "minLength": 1
+                                "minLength": 1,
+                                "examples": [
+                                    "%"
+                                ]
                             },
                             "privileges": {
                                 "type": "array",
@@ -416,12 +682,18 @@
                                         "database": {
                                             "type": "string",
                                             "description": "The MySQL database to which the privileges apply.",
-                                            "minLength": 1
+                                            "minLength": 1,
+                                            "examples": [
+                                                "*"
+                                            ]
                                         },
                                         "table": {
                                             "type": "string",
                                             "description": "The MySQL table to which the privileges apply.",
-                                            "minLength": 1
+                                            "minLength": 1,
+                                            "examples": [
+                                                "*"
+                                            ]
                                         },
                                         "withGrantOption": {
                                             "type": "boolean",
@@ -434,7 +706,11 @@
                                             "items": {
                                                 "type": "string",
                                                 "description": "Privileges for the specific MySQL database.table.",
-                                                "minLength": 1
+                                                "minLength": 1,
+                                                "examples": [
+                                                    "ALL",
+                                                    "SELECT"
+                                                ]
                                             }
                                         }
                                     },
@@ -472,29 +748,35 @@
                 "activeDataReplicas": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 3
+                    "maximum": 3,
+                    "default": 2
                 },
                 "numNodeGroups": {
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 1,
+                    "default": 1
                 },
                 "minNumMySQLServers": {
                     "type": "integer",
                     "minimum": 1,
-                    "description": "A minimum amount of MySQL servers"
+                    "description": "A minimum amount of MySQL servers",
+                    "default": 1
                 },
                 "maxNumMySQLServers": {
                     "type": "integer",
                     "minimum": 1,
-                    "description": "The maximum amount of MySQL servers we will auto-scale to. It is represented as number of slots in RonDB's config.ini. Changing this will only take effect if the ConfigMap for config.ini is updated and the MGMd is restarted."
+                    "description": "The maximum amount of MySQL servers we will auto-scale to. It is represented as number of slots in RonDB's config.ini. Changing this will only take effect if the ConfigMap for config.ini is updated and the MGMd is restarted.",
+                    "default": 5
                 },
                 "minNumRdrs": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "default": 1
                 },
                 "maxNumRdrs": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "default": 2
                 }
             },
             "required": [
@@ -515,10 +797,65 @@
                     "description": "Kubernetes resource limits",
                     "properties": {
                         "cpus": {
-                            "$ref": "#/$defs/cpuResources"
+                            "type": "object",
+                            "description": "CPU resources per RonDB service type",
+                            "properties": {
+                                "mgmds": {
+                                    "type": "number",
+                                    "default": 0.2
+                                },
+                                "ndbmtds": {
+                                    "type": "number",
+                                    "default": 2
+                                },
+                                "mysqlds": {
+                                    "type": "number",
+                                    "default": 2
+                                },
+                                "rdrs": {
+                                    "type": "number",
+                                    "default": 2
+                                },
+                                "benchs": {
+                                    "type": "number",
+                                    "default": 2
+                                },
+                                "restore": {
+                                    "type": "number",
+                                    "default": 1
+                                },
+                                "mysqldExporters": {
+                                    "type": "number",
+                                    "default": 0.2
+                                }
+                            }
                         },
                         "memory": {
-                            "$ref": "#/$defs/memoryResources"
+                            "type": "object",
+                            "description": "Memory resources per RonDB service type",
+                            "properties": {
+                                "ndbmtdsMiB": {
+                                    "type": "number",
+                                    "default": 4500
+                                },
+                                "mysqldMiB": {
+                                    "type": "number",
+                                    "description": "This can usually be kept at the default independent of the load",
+                                    "default": 1400
+                                },
+                                "rdrsMiB": {
+                                    "type": "number",
+                                    "default": 500
+                                },
+                                "benchsMiB": {
+                                    "type": "number",
+                                    "default": 500
+                                },
+                                "mysqldExportersMiB": {
+                                    "type": "number",
+                                    "default": 100
+                                }
+                            }
                         }
                     }
                 },
@@ -527,10 +864,53 @@
                     "description": "Kubernetes resource requests; Note that data nodes will only apply limits, not requests",
                     "properties": {
                         "cpus": {
-                            "$ref": "#/$defs/cpuResources"
+                            "type": "object",
+                            "description": "CPU resources per RonDB service type",
+                            "properties": {
+                                "mgmds": {
+                                    "type": "number",
+                                    "default": 0.2
+                                },
+                                "mysqlds": {
+                                    "type": "number",
+                                    "default": 1
+                                },
+                                "rdrs": {
+                                    "type": "number",
+                                    "default": 1
+                                },
+                                "benchs": {
+                                    "type": "number",
+                                    "default": 1
+                                },
+                                "mysqldExporters": {
+                                    "type": "number",
+                                    "default": 0.02
+                                }
+                            }
                         },
                         "memory": {
-                            "$ref": "#/$defs/memoryResources"
+                            "type": "object",
+                            "description": "Memory resources per RonDB service type",
+                            "properties": {
+                                "mysqldMiB": {
+                                    "type": "number",
+                                    "description": "This can usually be kept at the default independent of the load",
+                                    "default": 650
+                                },
+                                "rdrsMiB": {
+                                    "type": "number",
+                                    "default": 100
+                                },
+                                "benchsMiB": {
+                                    "type": "number",
+                                    "default": 100
+                                },
+                                "mysqldExportersMiB": {
+                                    "type": "number",
+                                    "default": 50
+                                }
+                            }
                         },
                         "storage": {
                             "type": "object",
@@ -615,47 +995,79 @@
             "description": "Configurations for RonDB's config.ini. Memory configurations are in binary SI units (i.e. 1G = 1GiB = 1024MiB).",
             "properties": {
                 "MaxNoOfTables": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "MaxNoOfAttributes": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "MaxNoOfTriggers": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "TransactionMemory": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "SharedGlobalMemory": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "ReservedConcurrentOperations": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "MaxNoOfConcurrentOperations": {
-                    "type": "integer"
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "MySQLdSlotsPerNode": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 4
+                    "maximum": 4,
+                    "default": 4
                 },
                 "RdrsSlotsPerNode": {
                     "type": "integer",
+                    "description": "The number of cluster connections we support via the RDRS",
                     "minimum": 1,
                     "maximum": 1,
-                    "description": "The number of cluster connections we support via the RDRS"
+                    "default": 1
                 },
                 "RdrsMetadataSlotsPerNode": {
                     "type": "integer",
+                    "description": "We use additional cluster connections for metadata",
                     "minimum": 1,
                     "maximum": 1,
-                    "description": "We use additional cluster connections for metadata"
+                    "default": 1
                 },
                 "EmptyApiSlots": {
                     "type": "integer",
+                    "description": "We need at least 1 for the MySQLd setup job. Otherwise this is for services that are not handled here, e.g. HopsFS",
                     "minimum": 1,
-                    "description": "We need at least 1 for the MySQLd setup job. Otherwise this is for services that are not handled here, e.g. HopsFS"
+                    "default": 8
                 },
                 "NdbmtdMemoryOverheadMiB": {
                     "type": "integer",
@@ -668,16 +1080,22 @@
                     "default": -1
                 },
                 "DiskPageBufferMemory": {
-                    "type": "string",
-                    "description": "DiskPageBufferMemory are used by disk columns. This is the page cache that contains disk pages when they are in memory. By default it is not defined."
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "DiskPageBufferMemory are used by disk columns. This is the page cache that contains disk pages when they are in memory. By default it is not defined.",
+                    "default": null
                 },
                 "TransactionInactiveTimeout": {
                     "type": "integer",
-                    "description": "Milliseconds that application waits before executing another part of transaction"
+                    "description": "Milliseconds that application waits before executing another part of transaction",
+                    "default": 15000
                 },
                 "TransactionDeadlockDetectionTimeout": {
                     "type": "integer",
-                    "description": "Time transaction can spend executing within data node"
+                    "description": "Time transaction can spend executing within data node",
+                    "default": 1500
                 }
             },
             "required": [
@@ -703,6 +1121,7 @@
                         "mgmds": {
                             "type": "array",
                             "maxItems": 1,
+                            "default": [],
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -740,7 +1159,8 @@
                         "string",
                         "null"
                     ],
-                    "description": "User-provided TLS Secret. This can be used by the cert-manager as a base to sign further certificates. If not supplied, cert-manager will use a self-signed CA certificate."
+                    "description": "User-provided TLS Secret. This can be used by the cert-manager as a base to sign further certificates. If not supplied, cert-manager will use a self-signed CA certificate.",
+                    "default": null
                 }
             }
         },
@@ -750,7 +1170,8 @@
             "properties": {
                 "enabled": {
                     "type": "boolean",
-                    "description": "Whether to run a benchmarking job on the cluster"
+                    "description": "Whether to run a benchmarking job on the cluster",
+                    "default": false
                 },
                 "type": {
                     "description": "Which benchmarking job to run. 'Multi' refers to multiple MySQLd servers to run against",
@@ -759,7 +1180,8 @@
                         "dbt2_single",
                         "dbt2_multi",
                         "ycsb"
-                    ]
+                    ],
+                    "default": "sysbench"
                 },
                 "dbt2": {
                     "type": "object",
@@ -767,15 +1189,18 @@
                     "properties": {
                         "numWarehouses": {
                             "type": "integer",
-                            "minimum": 1
+                            "minimum": 1,
+                            "default": 4
                         },
                         "runSingle": {
                             "type": "string",
-                            "description": "Table with columns: NUM_MYSQL_SERVERS | NUM_WAREHOUSES | NUM_TERMINALS"
+                            "description": "Table with columns: NUM_MYSQL_SERVERS, NUM_WAREHOUSES, NUM_TERMINALS",
+                            "default": "\n# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n1 1 1\n1 2 1\n1 4 1\n1 4 2"
                         },
                         "runMulti": {
                             "type": "string",
-                            "description": "Table with columns: NUM_MYSQL_SERVERS | NUM_WAREHOUSES | NUM_TERMINALS"
+                            "description": "Table with columns: NUM_MYSQL_SERVERS, NUM_WAREHOUSES, NUM_TERMINALS",
+                            "default": "\n# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n2 1 1\n2 2 1\n2 2 2"
                         }
                     }
                 },
@@ -785,10 +1210,12 @@
                     "properties": {
                         "threadCountsToRun": {
                             "type": "string",
-                            "description": "Semi-colon-separated list of thread counts to run"
+                            "description": "Semi-colon-separated list of thread counts to run",
+                            "default": "1;2;4;8;12;16;24;32;64"
                         },
                         "rows": {
-                            "type": "integer"
+                            "type": "integer",
+                            "default": 100000
                         },
                         "minimizeBandwidth": {
                             "type": "boolean",
@@ -803,7 +1230,8 @@
                     "properties": {
                         "schemata": {
                             "type": "string",
-                            "description": "MySQL table schema to use for YCSB. NOTE: The `ycsb` database is pre-created."
+                            "description": "MySQL table schema to use for YCSB. NOTE: The `ycsb` database is pre-created.",
+                            "default": "CREATE TABLE IF NOT EXISTS ycsb.usertable (YCSB_KEY VARCHAR(255) PRIMARY KEY, FIELD0 varbinary(4096));"
                         }
                     }
                 }
@@ -825,7 +1253,7 @@
                 "restoreNativeBackup": {
                     "type": "integer",
                     "description": "This does not include *downloading* the native backups. IMPORTANT; Restoring native backups is NOT done in parallel yet",
-                    "default": 30
+                    "default": 120
                 }
             },
             "required": [
@@ -843,7 +1271,8 @@
                         "integer",
                         "null"
                     ],
-                    "minimum": 1
+                    "minimum": 1,
+                    "default": null
                 },
                 "pathPrefix": {
                     "description": "Prefix of RonDB backup in the configured bucket",
@@ -856,9 +1285,13 @@
                     ],
                     "default": "s3"
                 },
+                "s3": {
+                    "$ref": "#/$defs/s3"
+                },
                 "excludeDatabases": {
                     "description": "Which databases to exclude from the native backup",
                     "type": "array",
+                    "default": [],
                     "items": {
                         "type": "string"
                     }
@@ -866,6 +1299,7 @@
                 "excludeTables": {
                     "description": "Which tables to exclude from the native backup. Use the format: database.table",
                     "type": "array",
+                    "default": [],
                     "items": {
                         "type": "string"
                     }
@@ -886,11 +1320,19 @@
                     "type": "string",
                     "default": "rondb_backup"
                 },
+                "schedule": {
+                    "description": "Cron schedule for backups",
+                    "type": "string",
+                    "default": "0 3 * * mon"
+                },
                 "objectStorageProvider": {
                     "enum": [
                         "s3"
                     ],
                     "default": "s3"
+                },
+                "s3": {
+                    "$ref": "#/$defs/s3"
                 }
             },
             "required": [
@@ -910,7 +1352,8 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean",
-                            "description": "Specifies if the primary replication is enabled. This will actually create the binary log servers. Can be activated after an initial start."
+                            "description": "Specifies if the primary replication is enabled. This will actually create the binary log servers. Can be activated after an initial start.",
+                            "default": false
                         },
                         "numBinlogServers": {
                             "type": "number",
@@ -919,14 +1362,16 @@
                         },
                         "maxNumBinlogServers": {
                             "type": "number",
-                            "default": 3,
+                            "default": 2,
                             "description": "Don't change this value. Determines how many binlog servers we can scale out to. Used to determine the server IDs for global replication. Even if replication is disabled, potential binlog servers will be written into the config.ini."
                         },
                         "expireBinlogsDays": {
-                            "type": "number"
+                            "type": "number",
+                            "default": 1.5
                         },
                         "logReplicaUpdates": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "default": false
                         },
                         "binlogFilename": {
                             "type": "string",
@@ -934,12 +1379,14 @@
                         },
                         "ignoreDatabases": {
                             "type": "array",
+                            "default": [],
                             "items": {
                                 "type": "string"
                             }
                         },
                         "ignoreTables": {
                             "type": "array",
+                            "default": [],
                             "items": {
                                 "type": "string"
                             }
@@ -967,7 +1414,7 @@
                             "properties": {
                                 "clusterNumber": {
                                     "type": "number",
-                                    "default": 1,
+                                    "default": 2,
                                     "description": "A helper to understand from which serverIds to replicate from"
                                 },
                                 "useTlsConnection": {
@@ -1092,6 +1539,43 @@
                 }
             }
         },
+        "s3": {
+            "type": "object",
+            "properties": {
+                "provider": {
+                    "type": "string",
+                    "default": "AWS"
+                },
+                "endpoint": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "bucketName": {
+                    "type": "string",
+                    "default": "rondb-helm"
+                },
+                "region": {
+                    "type": "string",
+                    "default": "eu-north-1"
+                },
+                "serverSideEncryption": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": "aws:kms"
+                },
+                "keyCredentialsSecret": {
+                    "$ref": "#/$defs/secret"
+                },
+                "secretCredentialsSecret": {
+                    "$ref": "#/$defs/secret"
+                }
+            }
+        },
         "cpuResources": {
             "type": "object",
             "description": "CPU resources per RonDB service type",
@@ -1141,31 +1625,13 @@
                 }
             }
         },
-        "image": {
-            "type": "object",
-            "description": "Docker image",
-            "properties": {
-                "registry": {
-                    "type": "string",
-                    "description": "Where image is hosted. Omit for local registry (E.g. use `minikube image load rondb:latest`)"
-                },
-                "repository": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "tag": {
-                    "type": "string"
-                }
-            }
-        },
         "endToEndTls": {
             "type": "object",
             "properties": {
                 "enabled": {
                     "description": "Whether to use end-to-end encryption for Pods. This is recommended for high-security use cases. For MySQLds this is especially recommended since they use raw TCP connections and thereby by-pass TLS Ingress-rules. Otherwise, Ingress-TCP can also be configured directly via the Ingress controller (not in this Helmchart).",
-                    "enabled": "boolean"
+                    "enabled": "boolean",
+                    "default": false
                 },
                 "secretName": {
                     "type": "string",
@@ -1191,7 +1657,7 @@
                         "string",
                         "null"
                     ],
-                    "default": "ca.crt",
+                    "default": null,
                     "description": "Name of the CA file in the Secret. ONLY overwrite this if you're not using standard TLS Secrets."
                 }
             },
@@ -1203,39 +1669,19 @@
                 "keyfileName"
             ]
         },
-        "externalLoadBalancer": {
-            "type": "object",
-            "description": "Configuration for load balancer service to be used for external access to RDRS",
-            "properties": {
-                "enabled": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "class": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "default": null
-                },
-                "annotations": {
-                    "type": "object",
-                    "description": "Cloud provider load balancer specific annotations."
-                },
-                "port": {
-                    "type": "integer",
-                    "description": "Port to expose the service on"
-                }
-            }
-        },
         "selector": {
             "type": "object",
             "properties": {
                 "matchLabels": {
-                    "type": "object"
+                    "type": "object",
+                    "default": {},
+                    "examples": {
+                        "app": "rondb"
+                    }
                 },
                 "matchExpressions": {
                     "type": "array",
+                    "default": [],
                     "items": {
                         "type": "object",
                         "properties": {

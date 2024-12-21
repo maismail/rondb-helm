@@ -1,5 +1,20 @@
 # Helmchart RonDB
 
+## About RonDB
+
+[RonDB](https://docs.rondb.com) is a fork of MySQL NDB Cluster, one of the storage engines supported by the MySQL server. It is a distributed, shared-nothing storage engine with capabilities for:
+
+- in-memory & on-disk columns
+- up to 1 PiB storage
+- online horizontal & vertical storage scaling
+- online horizontal & vertical compute scaling (MySQL servers)
+
+Being supported by the MySQL server, RonDB is inherently ACID compliant. In-memory data is regularly persisted to disk via a REDO log and checkpoints. RonDB is open-source, written in C++.
+
+## Chart host
+
+This Helmchart is hosted on [GitHub Pages](https://logicalclocks.github.io/rondb-helm/). See the `gh_pages` branch of this repository for the source code.
+
 ## Capabilities
 
 - Create custom-size, cross-AZ cluster
@@ -140,11 +155,15 @@ The Helm chart version is set in the Chart.yaml file under `version`. Helm requi
 
 Let's say our Chart.yaml now has version `0.1.0`. We have not released this version yet. The expected workflow will be as follows:
 1. Commit arbitrary changes to main
-2. Run a workflow dispatch to release the version `0.1.0-dev`. This can be referenced in other Helmcharts.
+2. Run one or more workflow dispatches to release the version `0.1.0-dev`. This can be referenced in other Helmcharts.
 3. If the Helmchart version is deemed stable, one runs:
    1. `git tag v0.1.0` on the main branch (the same version as in the Chart.yaml, plus prepending a `v`)
    2. `git push origin tag v0.1.0`; this will trigger a Helm chart release with version `0.1.0`
 4. Bump the version in the Chart.yaml to `0.1.1`
+
+The released Helmchart will be visible on the `gh_pages` branch of this repository.
+
+**IMPORTANT**: Try keeping `values.schema.json` up to date with the `values.yaml` file. It used to generate the Markdown docs on [GitHub Pages](https://logicalclocks.github.io/rondb-helm/).
 
 ## TODO
 
