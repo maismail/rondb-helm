@@ -163,7 +163,33 @@
                                     "default": "mysqlds"
                                 },
                                 "endToEndTls": {
-                                    "$ref": "#/$defs/endToEndTls"
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled": {
+                                            "description": "Whether to use end-to-end encryption for MySQLd Pods. This is recommended for high-security use cases. For MySQLds this is especially recommended since they use raw TCP connections and thereby by-pass TLS Ingress-rules. Otherwise, Ingress-TCP can also be configured directly via the Ingress controller (not in this Helmchart).",
+                                            "enabled": "boolean",
+                                            "default": false
+                                        },
+                                        "secretName": {
+                                            "type": "string",
+                                            "description": "Name of the TLS Secret",
+                                            "default": "mysqld-end-to-end-tls"
+                                        },
+                                        "supplyOwnSecret": {
+                                            "enabled": "boolean",
+                                            "default": false,
+                                            "description": "Whether the Helmchart user will create a TLS Secret outside of this Helmchart. Otherwise we rely on cert-manager to create one."
+                                        },
+                                        "filenames": {
+                                            "$ref": "#/$defs/tlsFilenames"
+                                        }
+                                    },
+                                    "required": [
+                                        "enabled",
+                                        "secretName",
+                                        "supplyOwnSecret",
+                                        "filenames"
+                                    ]
                                 }
                             },
                             "required": [
@@ -294,7 +320,33 @@
                                     "default": "rdrs"
                                 },
                                 "endToEndTls": {
-                                    "$ref": "#/$defs/endToEndTls"
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled": {
+                                            "description": "Whether to use end-to-end encryption for RDRS Pods. This is recommended for high-security use cases.",
+                                            "enabled": "boolean",
+                                            "default": false
+                                        },
+                                        "secretName": {
+                                            "type": "string",
+                                            "description": "Name of the TLS Secret",
+                                            "default": "rdrs-end-to-end-tls"
+                                        },
+                                        "supplyOwnSecret": {
+                                            "enabled": "boolean",
+                                            "default": false,
+                                            "description": "Whether the Helmchart user will create a TLS Secret outside of this Helmchart. Otherwise we rely on cert-manager to create one."
+                                        },
+                                        "filenames": {
+                                            "$ref": "#/$defs/tlsFilenames"
+                                        }
+                                    },
+                                    "required": [
+                                        "enabled",
+                                        "secretName",
+                                        "supplyOwnSecret",
+                                        "filenames"
+                                    ]
                                 }
                             },
                             "required": [
@@ -401,7 +453,33 @@
                                     "default": "mysqld-binlog-servers"
                                 },
                                 "endToEndTls": {
-                                    "$ref": "#/$defs/endToEndTls"
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled": {
+                                            "description": "Whether to use end-to-end encryption for MySQL binlog server Pods. This is recommended for high-security use cases. For MySQLds this is especially recommended since they use raw TCP connections and thereby by-pass TLS Ingress-rules. Otherwise, Ingress-TCP can also be configured directly via the Ingress controller (not in this Helmchart).",
+                                            "enabled": "boolean",
+                                            "default": false
+                                        },
+                                        "secretName": {
+                                            "type": "string",
+                                            "description": "Name of the TLS Secret",
+                                            "default": "binlog-end-to-end-tls"
+                                        },
+                                        "supplyOwnSecret": {
+                                            "enabled": "boolean",
+                                            "default": false,
+                                            "description": "Whether the Helmchart user will create a TLS Secret outside of this Helmchart. Otherwise we rely on cert-manager to create one."
+                                        },
+                                        "filenames": {
+                                            "$ref": "#/$defs/tlsFilenames"
+                                        }
+                                    },
+                                    "required": [
+                                        "enabled",
+                                        "secretName",
+                                        "supplyOwnSecret",
+                                        "filenames"
+                                    ]
                                 }
                             },
                             "required": [
@@ -428,7 +506,7 @@
                         },
                         "externalLoadBalancers": {
                             "type": "object",
-                            "description": "One LoadBalancer per binlog server",
+                            "description": "One LoadBalancer per binlog server; Creating an (alternative) Ingress per binlog server is difficult",
                             "properties": {
                                 "enabled": {
                                     "type": "boolean",
@@ -474,7 +552,33 @@
                                     "default": "mysqld-replica-appliers"
                                 },
                                 "endToEndTls": {
-                                    "$ref": "#/$defs/endToEndTls"
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled": {
+                                            "description": "Whether to use end-to-end encryption for MySQL replica applier Pods. This is recommended for high-security use cases. For MySQLds this is especially recommended since they use raw TCP connections and thereby by-pass TLS Ingress-rules. Otherwise, Ingress-TCP can also be configured directly via the Ingress controller (not in this Helmchart).",
+                                            "enabled": "boolean",
+                                            "default": false
+                                        },
+                                        "secretName": {
+                                            "type": "string",
+                                            "description": "Name of the TLS Secret",
+                                            "default": "replica-applier-end-to-end-tls"
+                                        },
+                                        "supplyOwnSecret": {
+                                            "enabled": "boolean",
+                                            "default": false,
+                                            "description": "Whether the Helmchart user will create a TLS Secret outside of this Helmchart. Otherwise we rely on cert-manager to create one."
+                                        },
+                                        "filenames": {
+                                            "$ref": "#/$defs/tlsFilenames"
+                                        }
+                                    },
+                                    "required": [
+                                        "enabled",
+                                        "secretName",
+                                        "supplyOwnSecret",
+                                        "filenames"
+                                    ]
                                 }
                             },
                             "required": [
@@ -533,6 +637,7 @@
                         },
                         "tag": {
                             "type": "string",
+                            "description": "The version of RonDB to use; This should always be equivalent to .Chart.AppVersion",
                             "default": "22.10.7-0.7"
                         }
                     }
@@ -948,20 +1053,23 @@
                                 },
                                 "diskColumnGiB": {
                                     "type": "integer",
-                                    "default": 64,
+                                    "description": "This depends on how much data the user is expecting to place on disk",
+                                    "default": 2,
                                     "minimum": 1
                                 },
                                 "redoLogGiB": {
                                     "type": "integer",
-                                    "default": 64,
+                                    "description": "64GiB is recommended for optimal performance",
+                                    "default": 4,
                                     "minimum": 2,
                                     "maximum": 64
                                 },
                                 "undoLogsGiB": {
                                     "type": "integer",
-                                    "default": 64,
+                                    "maximum": 128,
+                                    "default": 4,
                                     "minimum": 1,
-                                    "maximum": 128
+                                    "description": "64GiB is recommended for good performance"
                                 },
                                 "slackGiB": {
                                     "type": "integer",
@@ -976,8 +1084,9 @@
                                 },
                                 "binlogGiB": {
                                     "type": "integer",
+                                    "description": "Keep in mind that this size needs to survive the retention period of the binlog files",
                                     "minimum": 1,
-                                    "default": 2
+                                    "default": 4
                                 },
                                 "relayLogGiB": {
                                     "type": "integer",
@@ -1195,12 +1304,12 @@
                         "runSingle": {
                             "type": "string",
                             "description": "Table with columns: NUM_MYSQL_SERVERS, NUM_WAREHOUSES, NUM_TERMINALS",
-                            "default": "\n# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n1 1 1\n1 2 1\n1 4 1\n1 4 2"
+                            "default": "# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n1 1 1\n1 2 1\n1 4 1\n1 4 2"
                         },
                         "runMulti": {
                             "type": "string",
                             "description": "Table with columns: NUM_MYSQL_SERVERS, NUM_WAREHOUSES, NUM_TERMINALS",
-                            "default": "\n# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n2 1 1\n2 2 1\n2 2 2"
+                            "default": "# NUM_MYSQL_SERVERS  NUM_WAREHOUSES  NUM_TERMINALS\n2 1 1\n2 2 1\n2 2 2"
                         }
                     }
                 },
@@ -1252,7 +1361,7 @@
                 },
                 "restoreNativeBackup": {
                     "type": "integer",
-                    "description": "This does not include *downloading* the native backups. IMPORTANT; Restoring native backups is NOT done in parallel yet",
+                    "description": "This does not include *downloading* the native backups. IMPORTANT; Restoring native backups is NOT done in parallel yet; TODO: Make this dependent on amount of data",
                     "default": 120
                 }
             },
@@ -1525,20 +1634,7 @@
         "globalReplication"
     ],
     "$defs": {
-        "secret": {
-            "type": "object",
-            "description": "",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "Name of the secret"
-                },
-                "key": {
-                    "type": "string",
-                    "description": "Key in the secret"
-                }
-            }
-        },
+        "$comment": "NOTE: All fields in this SCHEMA file need defaults, since auto-generate the values.yaml file with this. Hence, only reference objects that have generic defaults.",
         "s3": {
             "type": "object",
             "properties": {
@@ -1562,97 +1658,64 @@
                     "default": "eu-north-1"
                 },
                 "serverSideEncryption": {
-                    "type": [
-                        "string",
-                        "null"
+                    "enum": [
+                        "aws:kms",
+                        "aws:kms:dsse",
+                        "AES256",
+                        null
                     ],
                     "default": "aws:kms"
                 },
                 "keyCredentialsSecret": {
-                    "$ref": "#/$defs/secret"
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the Secret",
+                            "minLength": 1,
+                            "default": "aws-credentials"
+                        },
+                        "key": {
+                            "type": "string",
+                            "description": "Key in the Secret",
+                            "minLength": 1,
+                            "default": "key_id"
+                        }
+                    }
                 },
                 "secretCredentialsSecret": {
-                    "$ref": "#/$defs/secret"
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name of the Secret",
+                            "minLength": 1,
+                            "default": "aws-credentials"
+                        },
+                        "key": {
+                            "type": "string",
+                            "description": "Key in the Secret",
+                            "minLength": 1,
+                            "default": "access_key"
+                        }
+                    }
                 }
             }
         },
-        "cpuResources": {
-            "type": "object",
-            "description": "CPU resources per RonDB service type",
-            "properties": {
-                "mgmds": {
-                    "type": "number"
-                },
-                "ndbmtds": {
-                    "type": "number"
-                },
-                "mysqlds": {
-                    "type": "number"
-                },
-                "rdrs": {
-                    "type": "number"
-                },
-                "benchs": {
-                    "type": "number"
-                },
-                "restore": {
-                    "type": "number"
-                },
-                "mysqldExporters": {
-                    "type": "number"
-                }
-            }
-        },
-        "memoryResources": {
-            "type": "object",
-            "description": "Memory resources per RonDB service type",
-            "properties": {
-                "ndbmtdsMiB": {
-                    "type": "number"
-                },
-                "mysqldMiB": {
-                    "type": "number",
-                    "description": "This can usually be kept at the default independent of the load"
-                },
-                "rdrsMiB": {
-                    "type": "number"
-                },
-                "benchsMiB": {
-                    "type": "number"
-                },
-                "mysqldExportersMiB": {
-                    "type": "number"
-                }
-            }
-        },
-        "endToEndTls": {
+        "tlsFilenames": {
             "type": "object",
             "properties": {
-                "enabled": {
-                    "description": "Whether to use end-to-end encryption for Pods. This is recommended for high-security use cases. For MySQLds this is especially recommended since they use raw TCP connections and thereby by-pass TLS Ingress-rules. Otherwise, Ingress-TCP can also be configured directly via the Ingress controller (not in this Helmchart).",
-                    "enabled": "boolean",
-                    "default": false
-                },
-                "secretName": {
-                    "type": "string",
-                    "description": "Name of the TLS Secret"
-                },
-                "supplyOwnSecret": {
-                    "enabled": "boolean",
-                    "default": false,
-                    "description": "Whether the Helmchart user will create a TLS Secret outside of this Helmchart. Otherwise we rely on cert-manager to create one."
-                },
-                "certfileName": {
+                "cert": {
                     "type": "string",
                     "default": "tls.crt",
                     "description": "Name of the certificate file in the Secret. ONLY overwrite this if you're not using standard TLS Secrets."
                 },
-                "keyfileName": {
+                "key": {
                     "type": "string",
                     "default": "tls.key",
                     "description": "Name of the key file in the Secret. ONLY overwrite this if you're not using standard TLS Secrets."
                 },
-                "cafileName": {
+                "ca": {
                     "type": [
                         "string",
                         "null"
@@ -1662,11 +1725,8 @@
                 }
             },
             "required": [
-                "enabled",
-                "secretName",
-                "supplyOwnSecret",
-                "certfileName",
-                "keyfileName"
+                "cert",
+                "key"
             ]
         },
         "selector": {
