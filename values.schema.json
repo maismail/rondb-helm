@@ -940,24 +940,26 @@
                             "description": "Memory resources per RonDB service type",
                             "properties": {
                                 "ndbmtdsMiB": {
-                                    "type": "number",
-                                    "default": 4500
+                                    "type": "integer",
+                                    "description": "It is recommended to keep this above 5GiB, otherwise some memory parts will be configured manually.",
+                                    "default": 5000,
+                                    "minimum": 2800
                                 },
                                 "mysqldMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "description": "This can usually be kept at the default independent of the load",
                                     "default": 1400
                                 },
                                 "rdrsMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 500
                                 },
                                 "benchsMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 500
                                 },
                                 "mysqldExportersMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 100
                                 }
                             }
@@ -999,20 +1001,20 @@
                             "description": "Memory resources per RonDB service type",
                             "properties": {
                                 "mysqldMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "description": "This can usually be kept at the default independent of the load",
                                     "default": 650
                                 },
                                 "rdrsMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 100
                                 },
                                 "benchsMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 100
                                 },
                                 "mysqldExportersMiB": {
-                                    "type": "number",
+                                    "type": "integer",
                                     "default": 50
                                 }
                             }
@@ -1138,6 +1140,20 @@
                     ],
                     "default": null
                 },
+                "ReplicationMemory": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
+                "SchemaMemory": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                },
                 "ReservedConcurrentOperations": {
                     "type": [
                         "integer",
@@ -1178,10 +1194,23 @@
                     "minimum": 1,
                     "default": 8
                 },
-                "NdbmtdMemoryOverheadMiB": {
-                    "type": "integer",
-                    "description": "Memory overhead for the RonDB datanode containers.",
-                    "default": 1024
+                "OsStaticOverhead": {
+                    "description": "Memory overhead for the RonDB datanode containers. Only set this if the container has less than 5GiB of memory.",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null,
+                    "example": "1400M"
+                },
+                "OsCpuOverhead": {
+                    "description": "Additional OS memory overhead for the RonDB datanode containers. This is multiplied by the number of CPUs. Also only set this if the container has less than 5GiB of memory.",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null,
+                    "example": "100M"
                 },
                 "InitialTablespaceSizeGiB": {
                     "type": "integer",
@@ -1212,7 +1241,8 @@
                 "RdrsSlotsPerNode",
                 "RdrsMetadataSlotsPerNode",
                 "EmptyApiSlots"
-            ]
+            ],
+            "additionalProperties": false
         },
         "rdrs": {
             "type": "object",
