@@ -44,6 +44,7 @@ echo "Make sure that all ndbmtds are ready..."
 {{ range $nodeId := reverse $nodeIds }}
 echo "Check if ndbmtd {{ $nodeId }} is ready"
 STATUS=$(/srv/hops/mysql/bin/ndb_mgm --ndb-connectstring $MGMD_HOSTNAME -e "{{ $nodeId }} status")
+echo $STATUS
 if [[ "$STATUS" != *"started"* ]]; then
     echo "Node {{ $nodeId }} is not ready, exiting..."
     exit 1
