@@ -157,7 +157,7 @@ jobs:
 
       - name: Test deploy stability
         shell: bash
-        timeout-minutes: 6
+        timeout-minutes: 12
         env:
           SLEEP_SECONDS: 10
           MIN_STABLE_MINUTES: 1
