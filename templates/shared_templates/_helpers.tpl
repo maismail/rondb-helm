@@ -146,7 +146,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.binlogFiles | qu
 {{- end }}
 
 {{- define "rondb.container.waitRestore" -}}
-{{- if $.Values.restoreFromBackup.backupId }}
+{{- if include "rondb.restoreFromBackup.backupId" $ }}
 - name: wait-restore-backup
   image: {{ include "image_address" (dict "image" $.Values.images.toolbox) }}
   imagePullPolicy: {{ $.Values.imagePullPolicy }}
@@ -371,6 +371,7 @@ true
 {{- end -}}
 {{- end -}}
 
+# FIXME should be changed when supporting multiple storage backends
 {{- define "rondb.backups.bucketName" -}}
 {{- if .backupConfig.s3.bucketName -}}
 {{- .backupConfig.s3.bucketName -}}
@@ -410,4 +411,13 @@ endpoint = {{ .backupConfig.s3.endpoint }}
 endpoint = {{ .global._hopsworks.managedObjectStorage.s3.endpoint }}
 {{- end }}
 {{- end }}
+{{- end -}}
+
+
+{{- define "rondb.restoreFromBackup.backupId" -}}
+{{- if .Values.restoreFromBackup.backupId -}}
+{{- .Values.restoreFromBackup.backupId  -}}
+{{- else if and (include  "rondb.globalObjectStorage" (dict "global" .Values.global)) .Values.global._hopsworks.managedObjectStorage.restoreFromBackup .Values.global._hopsworks.managedObjectStorage.restoreFromBackup.backupId -}}
+{{- .Values.global._hopsworks.managedObjectStorage.restoreFromBackup.backupId -}}
+{{- end -}}
 {{- end -}}
