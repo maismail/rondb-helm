@@ -22,9 +22,12 @@ imagePullSecrets:
 {{- define "rondb.PodSecurityContext" }}
 {{- if $.Values.enableSecurityContext }}
 securityContext:
+  runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 {{- end }}
 {{- end }}
 
@@ -36,6 +39,10 @@ securityContext:
   capabilities:
     drop:
       - ALL
+{{- if .addSysNice }}
+    add:
+      - SYS_NICE
+{{- end }}
   runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: null
@@ -194,6 +201,7 @@ storageClassName: {{ .Values.resources.requests.storage.classes.binlogFiles | qu
 - name: cluster-dependency-check
   image: {{ include "image_address" (dict "image" .Values.images.rondb) }}
   imagePullPolicy: {{ $.Values.imagePullPolicy }}
+{{ include "rondb.ContainerSecurityContext" $ | indent 2 }}
   command:
   - /bin/bash
   - -c
